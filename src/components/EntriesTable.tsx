@@ -137,104 +137,107 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         </thead>
         <tbody>
           {entries.map(entry => (
-            <tr 
-              key={entry.id} 
-              className="border-b border-border hover:bg-muted/20"
-            >
-              <td className="p-3">
-                {editingId === entry.id ? (
-                  <input
-                    type="text"
-                    value={editInput}
-                    onChange={(e) => setEditInput(e.target.value)}
-                    className="w-full p-2 border rounded"
-                    autoFocus
-                  />
-                ) : (
-                  entry.input
-                )}
-              </td>
-              
-              {entries.some(e => e.additionalInput) && (
+            <>
+              <tr 
+                key={entry.id} 
+                className="border-b border-border hover:bg-muted/20"
+              >
                 <td className="p-3">
                   {editingId === entry.id ? (
                     <input
                       type="text"
-                      value={editAdditionalInput}
-                      onChange={(e) => setEditAdditionalInput(e.target.value)}
+                      value={editInput}
+                      onChange={(e) => setEditInput(e.target.value)}
                       className="w-full p-2 border rounded"
+                      autoFocus
                     />
                   ) : (
-                    entry.additionalInput || "-"
+                    entry.input
                   )}
                 </td>
-              )}
-              
-              <td className="p-3 whitespace-nowrap">
-                {formatDate(entry.createdAt)}
-              </td>
-              
-              <td className="p-3 whitespace-nowrap">
-                <div className="flex space-x-2">
-                  {editingId === entry.id ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => saveEdit(entry)}
-                        title="Save changes"
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={cancelEditing}
-                        title="Cancel"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => startEditing(entry)}
-                        title="Edit entry"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(entry.id)}
-                        title="Delete entry"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </td>
-            </tr>
-            
-            {/* Output row when editing */}
-            {editingId === entry.id && (
-              <tr className="bg-muted/10">
-                <td colSpan={entries.some(e => e.additionalInput) ? 4 : 3} className="p-3">
-                  <div className="mb-1 font-medium text-sm">Output:</div>
-                  <textarea
-                    value={editOutput}
-                    onChange={(e) => setEditOutput(e.target.value)}
-                    className="w-full p-2 border rounded min-h-[100px]"
-                    rows={4}
-                  />
+                
+                {entries.some(e => e.additionalInput) && (
+                  <td className="p-3">
+                    {editingId === entry.id ? (
+                      <input
+                        type="text"
+                        value={editAdditionalInput}
+                        onChange={(e) => setEditAdditionalInput(e.target.value)}
+                        className="w-full p-2 border rounded"
+                      />
+                    ) : (
+                      entry.additionalInput || "-"
+                    )}
+                  </td>
+                )}
+                
+                <td className="p-3 whitespace-nowrap">
+                  {formatDate(entry.createdAt)}
+                </td>
+                
+                <td className="p-3 whitespace-nowrap">
+                  <div className="flex space-x-2">
+                    {editingId === entry.id ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => saveEdit(entry)}
+                          title="Save changes"
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={cancelEditing}
+                          title="Cancel"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => startEditing(entry)}
+                          title="Edit entry"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDelete(entry.id)}
+                          title="Delete entry"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+              
+              {/* Output row when editing */}
+              {editingId === entry.id && (
+                <tr className="bg-muted/10">
+                  <td colSpan={entries.some(e => e.additionalInput) ? 4 : 3} className="p-3">
+                    <div className="mb-1 font-medium text-sm">Output:</div>
+                    <textarea
+                      value={editOutput}
+                      onChange={(e) => setEditOutput(e.target.value)}
+                      className="w-full p-2 border rounded min-h-[100px]"
+                      rows={4}
+                    />
+                  </td>
+                </tr>
+              )}
+            </>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
