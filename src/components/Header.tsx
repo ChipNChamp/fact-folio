@@ -1,7 +1,8 @@
 
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "./Button";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   title: string;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header = ({ title, showBackButton = true }: HeaderProps) => {
   const navigate = useNavigate();
+  const isMobile = useMobile();
   
   const handleBack = () => {
     navigate(-1);
@@ -29,18 +31,11 @@ export const Header = ({ title, showBackButton = true }: HeaderProps) => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <h1 className="text-xl font-semibold">{title}</h1>
+          {!isMobile && <h1 className="text-xl font-semibold">{title}</h1>}
         </div>
         
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate("/entries")} 
-            className="rounded-full"
-          >
-            <BookOpen className="h-5 w-5" />
-          </Button>
+          {/* Star button was removed as per previous request */}
         </div>
       </div>
     </header>
