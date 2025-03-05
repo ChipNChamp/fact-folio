@@ -31,22 +31,6 @@ const Review = () => {
     setIsLoading(false);
   }, [category]);
   
-  // Get page title based on category
-  const getPageTitle = (): string => {
-    if (!category) return "Review All";
-    
-    const titles: Record<string, string> = {
-      vocabulary: "Vocabulary Review",
-      phrases: "Phrases Review",
-      definitions: "Definitions Review",
-      questions: "Questions Review",
-      business: "Business Review",
-      other: "Other Review"
-    };
-    
-    return titles[category] || "Review";
-  };
-  
   // Handle going to next card
   const handleNext = () => {
     if (currentIndex < reviewEntries.length - 1) {
@@ -81,7 +65,7 @@ const Review = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header title={getPageTitle()} />
+        <Header title="" />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-center p-6">
             <p>Loading review cards...</p>
@@ -95,7 +79,7 @@ const Review = () => {
   if (reviewEntries.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header title={getPageTitle()} />
+        <Header title="" />
         <main className="flex-1 flex flex-col items-center justify-center p-6">
           <div className="text-center max-w-md space-y-4 animate-fade-in">
             <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -118,14 +102,14 @@ const Review = () => {
   }
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header title={getPageTitle()} />
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
+      <Header title="" />
       
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-6">
+        <div className="w-full max-w-md relative">
+          <div className="text-center mb-2">
             <p className="text-sm text-muted-foreground">
-              Card {currentIndex + 1} of {reviewEntries.length}
+              {currentIndex + 1} of {reviewEntries.length}
             </p>
           </div>
           
@@ -138,10 +122,11 @@ const Review = () => {
             className="animate-fade-in"
           />
           
-          <div className="mt-8 w-full flex justify-center">
+          <div className="mt-4 w-full flex justify-center">
             <Button
               variant="outline"
               onClick={refreshReview}
+              size="sm"
               className="mx-auto"
             >
               <RotateCcw className="h-4 w-4 mr-2" /> 

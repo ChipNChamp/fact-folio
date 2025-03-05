@@ -32,13 +32,13 @@ const EntriesPage = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header title="Manage Entries" />
+    <div className="min-h-screen flex flex-col overflow-hidden">
+      <Header title="Entries" />
       
-      <main className="flex-1 px-4 py-6 max-w-5xl mx-auto w-full">
-        <div className="space-y-6 animate-fade-in">
+      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full overflow-auto">
+        <div className="space-y-4 animate-fade-in">
           <div className="flex flex-wrap gap-2 items-center justify-between">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1 sm:gap-2">
               <Button
                 variant={!selectedType ? "default" : "outline"}
                 onClick={() => setSelectedType(undefined)}
@@ -68,13 +68,7 @@ const EntriesPage = () => {
             </Button>
           </div>
           
-          <div className="border rounded-lg p-4">
-            <h2 className="text-lg font-medium mb-4">
-              {selectedType 
-                ? `${EntryTypes.find(t => t.value === selectedType)?.label} Entries` 
-                : "All Entries"}
-            </h2>
-            
+          <div className="border rounded-lg p-2 sm:p-4">
             <EntriesTable 
               key={`${selectedType || 'all'}-${refreshFlag}`}
               type={selectedType} 

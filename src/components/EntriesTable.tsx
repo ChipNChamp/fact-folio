@@ -185,17 +185,15 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
             {entries.some(e => e.additionalInput) && (
               <th className="p-3 text-left font-medium text-sm">Additional</th>
             )}
+            <th className="p-3 text-left font-medium text-sm">Output</th>
             <th className="p-3 text-left font-medium text-sm">Date</th>
             <th className="p-3 text-left font-medium text-sm">Actions</th>
           </tr>
         </thead>
         <tbody>
           {entries.map(entry => (
-            <>
-              <tr 
-                key={entry.id} 
-                className="border-b border-border hover:bg-muted/20"
-              >
+            <React.Fragment key={entry.id}>
+              <tr className="border-b border-border hover:bg-muted/20">
                 <td className="p-3">
                   {editingId === entry.id ? (
                     <input
@@ -224,6 +222,21 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
                     )}
                   </td>
                 )}
+                
+                <td className="p-3">
+                  {editingId === entry.id ? (
+                    <textarea
+                      value={editOutput}
+                      onChange={(e) => setEditOutput(e.target.value)}
+                      className="w-full p-2 border rounded min-h-[50px]"
+                      rows={2}
+                    />
+                  ) : (
+                    <div className="max-h-[80px] overflow-y-auto text-sm">
+                      {entry.output}
+                    </div>
+                  )}
+                </td>
                 
                 <td className="p-3 whitespace-nowrap">
                   {formatDate(entry.createdAt)}
@@ -273,22 +286,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
                   </div>
                 </td>
               </tr>
-              
-              {/* Output row when editing */}
-              {editingId === entry.id && (
-                <tr className="bg-muted/10">
-                  <td colSpan={entries.some(e => e.additionalInput) ? 4 : 3} className="p-3">
-                    <div className="mb-1 font-medium text-sm">Output:</div>
-                    <textarea
-                      value={editOutput}
-                      onChange={(e) => setEditOutput(e.target.value)}
-                      className="w-full p-2 border rounded min-h-[100px]"
-                      rows={4}
-                    />
-                  </td>
-                </tr>
-              )}
-            </>
+            </React.Fragment>
           ))}
         </tbody>
       </table>

@@ -45,7 +45,34 @@ export const FlashCard = ({
   };
 
   return (
-    <div className={cn("w-full max-w-md", className)}>
+    <div className={cn("w-full max-w-md relative", className)}>
+      {/* Navigation arrows on sides */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 sm:-translate-x-16 z-10">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onPrev} 
+          disabled={!canGoPrev}
+          className="h-12 w-12 sm:h-14 sm:w-14 opacity-70 hover:opacity-100 rounded-full bg-background/80"
+          aria-label="Previous card"
+        >
+          <ArrowLeft className="h-6 w-6" />
+        </Button>
+      </div>
+      
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 sm:translate-x-16 z-10">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onNext} 
+          disabled={!canGoNext}
+          className="h-12 w-12 sm:h-14 sm:w-14 opacity-70 hover:opacity-100 rounded-full bg-background/80"
+          aria-label="Next card"
+        >
+          <ArrowRight className="h-6 w-6" />
+        </Button>
+      </div>
+      
       <div 
         className="w-full h-[340px] sm:h-[400px] relative cursor-pointer"
         onClick={handleFlip}
@@ -107,30 +134,6 @@ export const FlashCard = ({
             </Button>
           </div>
         </div>
-      </div>
-      
-      {/* Navigation arrows */}
-      <div className="flex justify-between mt-6">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onPrev} 
-          disabled={!canGoPrev}
-          className="opacity-70 hover:opacity-100"
-          aria-label="Previous card"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onNext} 
-          disabled={!canGoNext}
-          className="opacity-70 hover:opacity-100"
-          aria-label="Next card"
-        >
-          <ArrowRight className="h-5 w-5" />
-        </Button>
       </div>
     </div>
   );
