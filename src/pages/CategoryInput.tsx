@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
@@ -21,13 +20,11 @@ const CategoryInput = () => {
   const [isStoring, setIsStoring] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   
-  // Check if API key exists on component mount
   useEffect(() => {
     const apiKey = getApiKey();
     setShowApiKey(!apiKey);
   }, []);
   
-  // Get the appropriate title based on the category
   const getCategoryTitle = (): string => {
     switch (category) {
       case "vocabulary": return "Add Vocabulary";
@@ -40,7 +37,6 @@ const CategoryInput = () => {
     }
   };
   
-  // Get placeholder text for the main input
   const getInputPlaceholder = (): string => {
     switch (category) {
       case "vocabulary": return "Enter a word";
@@ -53,7 +49,6 @@ const CategoryInput = () => {
     }
   };
   
-  // Get placeholder for the secondary input if needed
   const getAdditionalInputPlaceholder = (): string | null => {
     switch (category) {
       case "questions": return "Enter applicability (where would this be used)";
@@ -62,7 +57,6 @@ const CategoryInput = () => {
     }
   };
   
-  // Get label for the main input
   const getInputLabel = (): string => {
     switch (category) {
       case "vocabulary": return "Word";
@@ -75,7 +69,6 @@ const CategoryInput = () => {
     }
   };
   
-  // Handle content generation
   const handleGenerate = async () => {
     if (!input.trim()) {
       toast({
@@ -86,7 +79,6 @@ const CategoryInput = () => {
       return;
     }
     
-    // Check for API key
     if (!getApiKey()) {
       setShowApiKey(true);
       toast({
@@ -119,7 +111,6 @@ const CategoryInput = () => {
     }
   };
   
-  // Handle storing the entry
   const handleStore = () => {
     if (!input.trim() || !generatedContent.trim()) {
       toast({
@@ -145,15 +136,10 @@ const CategoryInput = () => {
         description: "Entry saved successfully",
       });
       
-      // Reset form
       setInput("");
       setAdditionalInput("");
       setGeneratedContent("");
-      
-      // Navigate back to home after a brief delay
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+      setIsStoring(false);
     } catch (error) {
       console.error("Error storing entry:", error);
       toast({
@@ -161,7 +147,6 @@ const CategoryInput = () => {
         description: "Could not save the entry. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsStoring(false);
     }
   };
@@ -172,7 +157,6 @@ const CategoryInput = () => {
       
       <main className="flex-1 px-4 py-6 max-w-3xl mx-auto w-full">
         <div className="space-y-6 animate-fade-in">
-          {/* API Key Section */}
           {showApiKey && (
             <div className="mb-8 animate-fade-in">
               <ApiKeyInput />
@@ -187,7 +171,6 @@ const CategoryInput = () => {
             </div>
           )}
           
-          {/* Main input */}
           <div className="space-y-2">
             <label htmlFor="main-input" className="text-sm font-medium">
               {getInputLabel()}
@@ -202,7 +185,6 @@ const CategoryInput = () => {
             />
           </div>
           
-          {/* Additional input for specific categories */}
           {getAdditionalInputPlaceholder() && (
             <div className="space-y-2">
               <label htmlFor="additional-input" className="text-sm font-medium">
@@ -219,7 +201,6 @@ const CategoryInput = () => {
             </div>
           )}
           
-          {/* Generate button */}
           <Button 
             onClick={handleGenerate} 
             disabled={isGenerating || !input.trim()}
@@ -235,7 +216,6 @@ const CategoryInput = () => {
             )}
           </Button>
           
-          {/* Toggle API key button */}
           {!showApiKey && (
             <div className="flex justify-center">
               <button 
@@ -247,7 +227,6 @@ const CategoryInput = () => {
             </div>
           )}
           
-          {/* Generated content display */}
           {generatedContent && (
             <div className="mt-8 animate-fade-in">
               <h3 className="text-lg font-medium mb-2">Generated Content</h3>
