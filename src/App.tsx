@@ -8,11 +8,19 @@ import CategoryInput from "@/pages/CategoryInput";
 import EntriesPage from "@/pages/EntriesPage";
 import NotFound from "@/pages/NotFound";
 import { PasswordProtection } from "@/components/PasswordProtection";
+import { initializeStorage } from "@/utils/storage";
 import "./App.css";
 
 function App() {
   useEffect(() => {
     document.title = "Knowledge Base";
+    
+    // Initialize storage and sync when app starts
+    const initStorage = async () => {
+      await initializeStorage();
+    };
+    
+    initStorage();
   }, []);
 
   return (

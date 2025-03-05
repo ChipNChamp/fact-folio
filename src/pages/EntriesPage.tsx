@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { EntriesTable } from "@/components/EntriesTable";
-import { EntryType, getAllEntries } from "@/utils/storage";
+import { EntryType, getAllEntries, initializeStorage } from "@/utils/storage";
 import { Button } from "@/components/Button";
 import { useNavigate } from "react-router-dom";
 
@@ -19,12 +19,34 @@ const EntriesPage = () => {
   const [selectedType, setSelectedType] = useState<EntryType | undefined>(undefined);
   const [refreshFlag, setRefreshFlag] = useState(0);
   const [hasEntries, setHasEntries] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Initialize storage and sync
+  useEffect(() => {
+    const init = async () => {
+      await initializeStorage();
+      setIsLoading(false);
+    };
+    
+    init();
+  }, []);
   
   // Check if there are any entries
   useEffect(() => {
-    const entries = getAllEntries();
-    setHasEntries(entries.length > 0);
+    const checkEntries = async () => {
+      try {
+        setIsLoading(true);
+        const entries = await getAllEntries();
+        setHasEntries(entries.length > 0);
+      } catch (error) {
+        console.error("Error checking entries:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkEntries();
   }, [refreshFlag]);
   
   const handleRefresh = () => {
@@ -69,11 +91,17 @@ const EntriesPage = () => {
           </div>
           
           <div className="border rounded-lg p-2 sm:p-4">
-            <EntriesTable 
-              key={`${selectedType || 'all'}-${refreshFlag}`}
-              type={selectedType} 
-              onUpdate={handleRefresh}
-            />
+            {isLoading && !hasEntries ? (
+              <div className="text-center p-8">
+                <p className="text-muted-foreground">Loading entries...</p>
+              </div>
+            ) : (
+              <EntriesTable 
+                key={`${selectedType || 'all'}-${refreshFlag}`}
+                type={selectedType} 
+                onUpdate={handleRefresh}
+              />
+            )}
           </div>
         </div>
       </main>

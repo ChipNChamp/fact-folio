@@ -1,3 +1,4 @@
+
 export type EntryType = 'vocabulary' | 'phrases' | 'definitions' | 'questions' | 'business' | 'other';
 
 export interface EntryData {
@@ -10,31 +11,37 @@ export interface EntryData {
   knowledge: number; // 0 = fail, 1 = eh, 2 = pass, -1 = not reviewed
 }
 
+import { 
+  getAllEntriesFromDB, 
+  getEntriesByTypeFromDB, 
+  saveEntryToDB, 
+  deleteEntryFromDB, 
+  clearAllEntriesFromDB, 
+  initializeSync 
+} from './syncStorage';
+
 // Generate a unique ID
 const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
 // Get all entries
-export const getAllEntries = (): EntryData[] => {
-  const entries = localStorage.getItem('knowledge-entries');
-  return entries ? JSON.parse(entries) : [];
+export const getAllEntries = async (): Promise<EntryData[]> => {
+  return await getAllEntriesFromDB();
 };
 
 // Get entries of a specific type
-export const getEntriesByType = (type: EntryType): EntryData[] => {
-  return getAllEntries().filter(entry => entry.type === type);
+export const getEntriesByType = async (type: EntryType): Promise<EntryData[]> => {
+  return await getEntriesByTypeFromDB(type);
 };
 
 // Add a new entry
-export const addEntry = (
+export const addEntry = async (
   type: EntryType,
   input: string,
   output: string,
   additionalInput?: string
-): EntryData => {
-  const entries = getAllEntries();
-  
+): Promise<EntryData> => {
   const newEntry: EntryData = {
     id: generateId(),
     type,
@@ -45,23 +52,24 @@ export const addEntry = (
     knowledge: -1 // Not reviewed yet
   };
   
-  localStorage.setItem('knowledge-entries', JSON.stringify([...entries, newEntry]));
+  await saveEntryToDB(newEntry);
   return newEntry;
 };
 
 // Update entry knowledge level
-export const updateEntryKnowledge = (id: string, knowledge: number): void => {
-  const entries = getAllEntries();
-  const updatedEntries = entries.map(entry => 
-    entry.id === id ? { ...entry, knowledge } : entry
-  );
+export const updateEntryKnowledge = async (id: string, knowledge: number): Promise<void> => {
+  const entries = await getAllEntriesFromDB();
+  const entry = entries.find(e => e.id === id);
   
-  localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
+  if (entry) {
+    entry.knowledge = knowledge;
+    await saveEntryToDB(entry);
+  }
 };
 
 // Get entries for review
-export const getEntriesForReview = (count: number = 10): EntryData[] => {
-  const allEntries = getAllEntries();
+export const getEntriesForReview = async (count: number = 10): Promise<EntryData[]> => {
+  const allEntries = await getAllEntriesFromDB();
   
   if (allEntries.length === 0) return [];
   
@@ -106,23 +114,21 @@ export const getEntriesForReview = (count: number = 10): EntryData[] => {
 };
 
 // Update an existing entry
-export const updateEntry = (updatedEntry: EntryData): void => {
-  const entries = getAllEntries();
-  const updatedEntries = entries.map(entry => 
-    entry.id === updatedEntry.id ? updatedEntry : entry
-  );
-  
-  localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
+export const updateEntry = async (updatedEntry: EntryData): Promise<void> => {
+  await saveEntryToDB(updatedEntry);
 };
 
 // Delete an entry
-export const deleteEntry = (id: string): void => {
-  const entries = getAllEntries();
-  const filteredEntries = entries.filter(entry => entry.id !== id);
-  localStorage.setItem('knowledge-entries', JSON.stringify(filteredEntries));
+export const deleteEntry = async (id: string): Promise<void> => {
+  await deleteEntryFromDB(id);
 };
 
 // Clear all entries
-export const clearAllEntries = (): void => {
-  localStorage.removeItem('knowledge-entries');
+export const clearAllEntries = async (): Promise<void> => {
+  await clearAllEntriesFromDB();
+};
+
+// Initialize sync on app start
+export const initializeStorage = async (): Promise<void> => {
+  await initializeSync();
 };

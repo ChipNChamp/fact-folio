@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -25,6 +26,7 @@ interface EntriesTableProps {
 export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const { toast } = useToast();
   const [entries, setEntries] = useState<EntryData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editInput, setEditInput] = useState("");
   const [editAdditionalInput, setEditAdditionalInput] = useState<string>("");
@@ -34,9 +36,10 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     refreshEntries();
   }, [type]);
   
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      deleteEntry(id);
+      setLoading(true);
+      await deleteEntry(id);
       setEntries(entries.filter(entry => entry.id !== id));
       toast({
         title: "Entry deleted",
@@ -49,6 +52,8 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         description: "Could not delete the entry",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -66,8 +71,9 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     setEditOutput("");
   };
   
-  const saveEdit = (entry: EntryData) => {
+  const saveEdit = async (entry: EntryData) => {
     try {
+      setLoading(true);
       const updatedEntry = {
         ...entry,
         input: editInput,
@@ -75,7 +81,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         output: editOutput
       };
       
-      updateEntry(updatedEntry);
+      await updateEntry(updatedEntry);
       
       setEntries(entries.map(e => 
         e.id === entry.id ? updatedEntry : e
@@ -94,12 +100,28 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         description: "Could not update the entry",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
   
-  const refreshEntries = () => {
-    const refreshedEntries = type ? getEntriesByType(type) : getAllEntries();
-    setEntries(refreshedEntries);
+  const refreshEntries = async () => {
+    setLoading(true);
+    try {
+      const refreshedEntries = type 
+        ? await getEntriesByType(type) 
+        : await getAllEntries();
+      setEntries(refreshedEntries);
+    } catch (error) {
+      console.error("Error fetching entries:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load entries",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   const formatDate = (timestamp: number) => {
@@ -145,6 +167,14 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       description: `Exported ${entries.length} entries to CSV`,
     });
   };
+  
+  if (loading && entries.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-lg bg-muted/30">
+        <p className="text-muted-foreground">Loading entries...</p>
+      </div>
+    );
+  }
   
   if (entries.length === 0) {
     return (
