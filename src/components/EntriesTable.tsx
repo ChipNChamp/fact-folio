@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
   getEntriesByType, 
@@ -31,12 +30,10 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const [editAdditionalInput, setEditAdditionalInput] = useState<string>("");
   const [editOutput, setEditOutput] = useState("");
   
-  // Load entries when type changes
   useEffect(() => {
     refreshEntries();
   }, [type]);
   
-  // Delete an entry
   const handleDelete = (id: string) => {
     try {
       deleteEntry(id);
@@ -55,7 +52,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     }
   };
   
-  // Edit an entry
   const startEditing = (entry: EntryData) => {
     setEditingId(entry.id);
     setEditInput(entry.input);
@@ -63,7 +59,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     setEditOutput(entry.output);
   };
   
-  // Cancel editing
   const cancelEditing = () => {
     setEditingId(null);
     setEditInput("");
@@ -71,7 +66,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     setEditOutput("");
   };
   
-  // Save edited entry
   const saveEdit = (entry: EntryData) => {
     try {
       const updatedEntry = {
@@ -103,18 +97,15 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     }
   };
   
-  // Refresh entries - Fix the infinite update loop
   const refreshEntries = () => {
     const refreshedEntries = type ? getEntriesByType(type) : getAllEntries();
     setEntries(refreshedEntries);
   };
   
-  // Format date
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString();
   };
 
-  // Export table to CSV
   const exportToCSV = () => {
     if (entries.length === 0) {
       toast({
@@ -125,7 +116,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       return;
     }
 
-    // Create CSV content
     const headers = ["Input", "Additional Input", "Output", "Date", "Knowledge Level"];
     const rows = entries.map(entry => [
       `"${entry.input.replace(/"/g, '""')}"`,
@@ -140,7 +130,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       ...rows.map(row => row.join(","))
     ].join("\n");
 
-    // Create and download the file
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
