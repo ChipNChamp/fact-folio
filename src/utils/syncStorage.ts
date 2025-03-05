@@ -1,4 +1,3 @@
-
 import { EntryData, EntryType } from './storage';
 
 // Define the sync event names
@@ -164,19 +163,24 @@ export const initializeSync = async () => {
   }
 
   // Set up periodic sync if browser supports it
-  if ('serviceWorker' in navigator && 'sync' in window) {
+  if ('serviceWorker' in navigator) {
     try {
-      // Register for sync events
+      // Register for sync events if the API is available
       navigator.serviceWorker.ready.then(registration => {
-        registration.sync.register(SYNC_EVENT_KEY).catch(err => {
-          console.error('Background sync registration failed:', err);
-        });
+        // Check if the sync API is available
+        if ('sync' in registration) {
+          registration.sync.register(SYNC_EVENT_KEY).catch(err => {
+            console.error('Background sync registration failed:', err);
+          });
+        } else {
+          console.log('Background Sync API not available in this browser');
+        }
       });
     } catch (err) {
       console.error('Sync registration error:', err);
     }
   } else {
-    console.log('Background sync not supported in this browser');
+    console.log('ServiceWorker not supported in this browser');
     
     // Alternative: set up a simple periodic check using local storage timestamp
     setInterval(async () => {

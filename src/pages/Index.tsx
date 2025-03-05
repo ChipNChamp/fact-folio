@@ -11,8 +11,12 @@ const Index = () => {
   const [entryCount, setEntryCount] = useState(0);
 
   useEffect(() => {
-    const entries = getAllEntries();
-    setEntryCount(entries.length);
+    const fetchEntries = async () => {
+      const entries = await getAllEntries();
+      setEntryCount(entries.length);
+    };
+    
+    fetchEntries();
   }, []);
 
   const categories = [

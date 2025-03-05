@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { FlashCard } from "@/components/FlashCard";
@@ -16,19 +15,27 @@ const Review = () => {
   
   // Load review entries on mount or when category changes
   useEffect(() => {
-    let entries: EntryData[] = [];
+    const loadEntries = async () => {
+      setIsLoading(true);
+      try {
+        if (category) {
+          // Category-specific review
+          const entries = await getEntriesByType(category as EntryType);
+          setReviewEntries(entries);
+        } else {
+          // General review
+          const entries = await getEntriesForReview(10);
+          setReviewEntries(entries);
+        }
+        setCurrentIndex(0);
+      } catch (error) {
+        console.error("Error loading review entries:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    if (category) {
-      // Category-specific review
-      entries = getEntriesByType(category as EntryType);
-    } else {
-      // General review
-      entries = getEntriesForReview(10);
-    }
-    
-    setReviewEntries(entries);
-    setCurrentIndex(0);
-    setIsLoading(false);
+    loadEntries();
   }, [category]);
   
   // Handle going to next card
@@ -46,20 +53,23 @@ const Review = () => {
   };
   
   // Refresh with new review entries
-  const refreshReview = () => {
+  const refreshReview = async () => {
     setIsLoading(true);
     
-    let entries: EntryData[] = [];
-    
-    if (category) {
-      entries = getEntriesByType(category as EntryType);
-    } else {
-      entries = getEntriesForReview(10);
+    try {
+      if (category) {
+        const entries = await getEntriesByType(category as EntryType);
+        setReviewEntries(entries);
+      } else {
+        const entries = await getEntriesForReview(10);
+        setReviewEntries(entries);
+      }
+      setCurrentIndex(0);
+    } catch (error) {
+      console.error("Error refreshing review entries:", error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setReviewEntries(entries);
-    setCurrentIndex(0);
-    setIsLoading(false);
   };
   
   if (isLoading) {
