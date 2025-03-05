@@ -20,36 +20,42 @@ const Index = () => {
       name: "Vocabulary",
       icon: <Book className="h-8 w-8 mb-2" />,
       path: "/input/vocabulary",
+      reviewPath: "/review/vocabulary",
       color: "bg-blue-50 text-blue-600",
     },
     {
       name: "Phrases",
       icon: <BookOpen className="h-8 w-8 mb-2" />,
       path: "/input/phrases",
+      reviewPath: "/review/phrases",
       color: "bg-indigo-50 text-indigo-600",
     },
     {
       name: "Definitions",
       icon: <FileText className="h-8 w-8 mb-2" />,
       path: "/input/definitions",
+      reviewPath: "/review/definitions",
       color: "bg-purple-50 text-purple-600",
     },
     {
       name: "Questions",
       icon: <HelpCircle className="h-8 w-8 mb-2" />,
       path: "/input/questions",
+      reviewPath: "/review/questions",
       color: "bg-pink-50 text-pink-600",
     },
     {
       name: "Business",
       icon: <Briefcase className="h-8 w-8 mb-2" />,
       path: "/input/business",
+      reviewPath: "/review/business",
       color: "bg-orange-50 text-orange-600",
     },
     {
       name: "Other",
       icon: <FolderDot className="h-8 w-8 mb-2" />,
       path: "/input/other",
+      reviewPath: "/review/other",
       color: "bg-emerald-50 text-emerald-600",
     },
   ];
@@ -68,14 +74,21 @@ const Index = () => {
         
         <section className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8 animate-slide-in">
           {categories.map((category) => (
-            <button
-              key={category.name}
-              onClick={() => navigate(category.path)}
-              className={`rounded-xl p-4 flex flex-col items-center justify-center text-center h-32 transition-all duration-200 border border-border/30 ${category.color} shadow-sm hover:shadow-md hover:scale-[1.02]`}
-            >
-              {category.icon}
-              <span className="font-medium">{category.name}</span>
-            </button>
+            <div key={category.name} className="flex flex-col space-y-2">
+              <button
+                onClick={() => navigate(category.path)}
+                className={`rounded-xl p-4 flex flex-col items-center justify-center text-center h-32 transition-all duration-200 border border-border/30 ${category.color} shadow-sm hover:shadow-md hover:scale-[1.02]`}
+              >
+                {category.icon}
+                <span className="font-medium">{category.name}</span>
+              </button>
+              <button
+                onClick={() => navigate(category.reviewPath)}
+                className={`rounded-lg p-1 flex items-center justify-center text-center text-xs font-medium transition-all duration-200 border border-border/30 ${category.color} bg-opacity-30 hover:bg-opacity-50`}
+              >
+                <RotateCcw className="h-3 w-3 mr-1" /> Review
+              </button>
+            </div>
           ))}
         </section>
         
@@ -88,7 +101,7 @@ const Index = () => {
           >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <RotateCcw className="mr-2 h-5 w-5" /> 
-            Review ({entryCount})
+            All Reviews ({entryCount})
           </Button>
           
           {entryCount === 0 && (
