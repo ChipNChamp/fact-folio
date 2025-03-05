@@ -1,4 +1,3 @@
-
 export type ContentType = 'vocabulary' | 'phrases' | 'definitions' | 'questions' | 'business' | 'other';
 
 // API key management
@@ -25,38 +24,35 @@ export const clearApiKey = (): void => {
 const generatePrompt = (type: ContentType, input: string, additionalInput?: string): string => {
   switch (type) {
     case 'vocabulary':
-      return `Provide a detailed definition of the word "${input}" followed by two distinct example sentences that use this word correctly. Format the response as follows:
-Definition: [definition here]
+      return `Provide a brief definition of the word "${input}" followed by two short example sentences. Format as:
+Definition: [concise definition]
 
-Example 1: [first example sentence]
+Example 1: [brief sentence]
 
-Example 2: [second example sentence]`;
+Example 2: [brief sentence]`;
     
     case 'phrases':
-      return `Provide a brief description of the phrase "${input}" and explain when/how it would typically be used. Format the response as follows:
-Description: [description here]
+      return `Briefly describe the phrase "${input}" and its typical usage. Be concise. Format as:
+Description: [brief description]
 
-Usage: [usage explanation]`;
+Usage: [concise usage explanation]`;
     
     case 'definitions':
-      return `Provide a comprehensive and clear definition of the term "${input}".`;
+      return `Provide a clear, concise definition of "${input}". Keep it brief and direct.`;
     
     case 'questions':
-      return `The following is a question: "${input}"
-This question would be relevant in contexts related to: ${additionalInput || 'various topics'}
-Please acknowledge this question has been recorded.`;
+      return `Question recorded: "${input}"
+Context: ${additionalInput || 'general'}`;
     
     case 'business':
-      return `The following is a business fact: "${input}"
-This fact is particularly applicable to: ${additionalInput || 'various business contexts'}
-Please acknowledge this business fact has been recorded.`;
+      return `Business fact: "${input}"
+Applies to: ${additionalInput || 'general business'}`;
     
     case 'other':
-      return `The following information has been provided: "${input}"
-Please acknowledge this information has been recorded.`;
+      return `Information: "${input}"`;
     
     default:
-      return `Generate content related to: ${input}`;
+      return `Generate concise content for: ${input}`;
   }
 };
 
@@ -85,7 +81,7 @@ export const generateContent = async (type: ContentType, input: string, addition
             content: prompt
           }
         ],
-        max_tokens: 300,
+        max_tokens: 200,
         temperature: 0.7
       })
     });
@@ -100,7 +96,6 @@ export const generateContent = async (type: ContentType, input: string, addition
   } catch (error) {
     console.error('Error generating content:', error);
     
-    // If API call fails, fall back to mock content
     if (error instanceof Error) {
       throw new Error(`Failed to generate content: ${error.message}`);
     }

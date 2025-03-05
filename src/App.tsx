@@ -20,7 +20,7 @@ function App() {
         <Route path="/" element={<IndexPage />} />
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/entries" element={<EntriesPage />} />
-        <Route path="/add/:category" element={<CategoryInput />} />
+        <Route path="/input/:category" element={<CategoryInput />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
