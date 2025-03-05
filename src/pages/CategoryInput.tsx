@@ -1,4 +1,3 @@
-
 import { useState, useEffect, KeyboardEvent, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
@@ -26,13 +25,11 @@ const CategoryInput = () => {
   const generateButtonRef = useRef<HTMLButtonElement>(null);
   
   useEffect(() => {
-    // Only check API key for categories that need generation
     if (needsGeneration()) {
       const apiKey = getApiKey();
       setShowApiKey(!apiKey);
     }
     
-    // Focus on main input when component mounts
     setTimeout(() => {
       if (mainInputRef.current) {
         mainInputRef.current.focus();
@@ -206,7 +203,6 @@ const CategoryInput = () => {
       setGeneratedContent("");
       setIsStoring(false);
       
-      // Focus back on main input after saving
       setTimeout(() => {
         if (mainInputRef.current) {
           mainInputRef.current.focus();
@@ -223,9 +219,7 @@ const CategoryInput = () => {
     }
   };
   
-  // Handle keyboard shortcuts
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    // Enter key to submit
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       
@@ -242,11 +236,14 @@ const CategoryInput = () => {
       }
     }
     
-    // Tab key to regenerate
     if (e.key === 'Tab' && generatedContent && needsGeneration()) {
       e.preventDefault();
       handleGenerate();
     }
+  };
+
+  const handleDivKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    handleKeyDown(e as unknown as KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>);
   };
 
   return (
@@ -366,7 +363,7 @@ const CategoryInput = () => {
               </div>
               <div 
                 className="p-4 rounded-lg border border-border bg-muted/30 whitespace-pre-wrap"
-                onKeyDown={handleKeyDown}
+                onKeyDown={handleDivKeyDown}
                 tabIndex={0}
               >
                 {generatedContent}
