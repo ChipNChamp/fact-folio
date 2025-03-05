@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Header } from "@/components/Header";
+import { ApiKeyInput } from "@/components/ApiKeyInput";
 import { EntryType, addEntry } from "@/utils/storage";
-import { ContentType, generateContent } from "@/utils/contentGenerator";
+import { ContentType, generateContent, getApiKey } from "@/utils/contentGenerator";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +19,13 @@ const CategoryInput = () => {
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isStoring, setIsStoring] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  
+  // Check if API key exists on component mount
+  useEffect(() => {
+    const apiKey = getApiKey();
+    setShowApiKey(!apiKey);
+  }, []);
   
   // Get the appropriate title based on the category
   const getCategoryTitle = (): string => {
@@ -78,17 +86,32 @@ const CategoryInput = () => {
       return;
     }
     
+    // Check for API key
+    if (!getApiKey()) {
+      setShowApiKey(true);
+      toast({
+        title: "API key required",
+        description: "Please enter your OpenAI API key",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsGenerating(true);
     setGeneratedContent("");
     
     try {
-      const content = await generateContent(category as ContentType, input);
+      const content = await generateContent(
+        category as ContentType, 
+        input, 
+        additionalInput || undefined
+      );
       setGeneratedContent(content);
     } catch (error) {
       console.error("Error generating content:", error);
       toast({
         title: "Generation failed",
-        description: "Could not generate content. Please try again.",
+        description: error instanceof Error ? error.message : "Could not generate content. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -149,6 +172,21 @@ const CategoryInput = () => {
       
       <main className="flex-1 px-4 py-6 max-w-3xl mx-auto w-full">
         <div className="space-y-6 animate-fade-in">
+          {/* API Key Section */}
+          {showApiKey && (
+            <div className="mb-8 animate-fade-in">
+              <ApiKeyInput />
+              <div className="flex justify-center mt-4">
+                <button 
+                  onClick={() => setShowApiKey(false)} 
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {getApiKey() ? "Hide API Key" : "I'll add this later"}
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* Main input */}
           <div className="space-y-2">
             <label htmlFor="main-input" className="text-sm font-medium">
@@ -196,6 +234,18 @@ const CategoryInput = () => {
               <>Generate</>
             )}
           </Button>
+          
+          {/* Toggle API key button */}
+          {!showApiKey && (
+            <div className="flex justify-center">
+              <button 
+                onClick={() => setShowApiKey(!showApiKey)} 
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {getApiKey() ? "Edit API Key" : "Set API Key"}
+              </button>
+            </div>
+          )}
           
           {/* Generated content display */}
           {generatedContent && (
