@@ -12,7 +12,8 @@ import {
   Pencil, 
   Trash2, 
   Save, 
-  X 
+  X,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
@@ -102,16 +103,58 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     }
   };
   
-  // Refresh entries
+  // Refresh entries - Fix the infinite update loop
   const refreshEntries = () => {
     const refreshedEntries = type ? getEntriesByType(type) : getAllEntries();
     setEntries(refreshedEntries);
-    if (onUpdate) onUpdate();
   };
   
   // Format date
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString();
+  };
+
+  // Export table to CSV
+  const exportToCSV = () => {
+    if (entries.length === 0) {
+      toast({
+        title: "Export failed",
+        description: "No entries to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create CSV content
+    const headers = ["Input", "Additional Input", "Output", "Date", "Knowledge Level"];
+    const rows = entries.map(entry => [
+      `"${entry.input.replace(/"/g, '""')}"`,
+      `"${(entry.additionalInput || "").replace(/"/g, '""')}"`,
+      `"${entry.output.replace(/"/g, '""')}"`,
+      `"${new Date(entry.createdAt).toLocaleDateString()}"`,
+      `"${entry.knowledge === -1 ? "Not Reviewed" : entry.knowledge === 0 ? "Fail" : entry.knowledge === 1 ? "Eh" : "Pass"}"`
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${type || "all"}-entries.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export successful",
+      description: `Exported ${entries.length} entries to CSV`,
+    });
   };
   
   if (entries.length === 0) {
@@ -124,6 +167,17 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   
   return (
     <div className="overflow-x-auto animate-fade-in">
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={exportToCSV}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </Button>
+      </div>
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-muted/50">

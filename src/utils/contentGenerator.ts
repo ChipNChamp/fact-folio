@@ -1,3 +1,4 @@
+
 export type ContentType = 'vocabulary' | 'phrases' | 'definitions' | 'questions' | 'business' | 'other';
 
 // API key management
@@ -25,20 +26,24 @@ const generatePrompt = (type: ContentType, input: string, additionalInput?: stri
   switch (type) {
     case 'vocabulary':
       return `Provide a brief definition of the word "${input}" followed by two short example sentences. Format as:
-Definition: [concise definition]
+Definition: [very concise definition, fragment sentences OK]
 
 Example 1: [brief sentence]
 
-Example 2: [brief sentence]`;
+Example 2: [brief sentence]
+
+Keep all content extremely concise.`;
     
     case 'phrases':
-      return `Briefly describe the phrase "${input}" and its typical usage. Be concise. Format as:
-Description: [brief description]
+      return `Briefly describe the phrase "${input}" and its typical usage. Be extremely concise. Format as:
+Description: [brief, direct description]
 
-Usage: [concise usage explanation]`;
+Usage: [concise usage explanation]
+
+Keep all content extremely concise. Fragment sentences are OK.`;
     
     case 'definitions':
-      return `Provide a clear, concise definition of "${input}". Keep it brief and direct.`;
+      return `Provide a clear, concise definition of "${input}". Keep it very brief and direct. Use fragment sentences if appropriate.`;
     
     case 'questions':
       return `Question recorded: "${input}"
@@ -52,7 +57,7 @@ Applies to: ${additionalInput || 'general business'}`;
       return `Information: "${input}"`;
     
     default:
-      return `Generate concise content for: ${input}`;
+      return `Generate extremely concise content for: ${input}`;
   }
 };
 
@@ -77,11 +82,15 @@ export const generateContent = async (type: ContentType, input: string, addition
         model: 'gpt-3.5-turbo',
         messages: [
           {
+            role: 'system',
+            content: 'You are a concise assistant. Keep responses extremely brief and to the point. Fragment sentences are acceptable as long as they clearly convey meaning.'
+          },
+          {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 200,
+        max_tokens: 150,
         temperature: 0.7
       })
     });

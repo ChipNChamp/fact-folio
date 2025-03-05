@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, KeyboardEvent, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Header } from "@/components/Header";
 import { ApiKeyInput } from "@/components/ApiKeyInput";
 import { EntryType, addEntry } from "@/utils/storage";
 import { ContentType, generateContent, getApiKey } from "@/utils/contentGenerator";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const CategoryInput = () => {
@@ -20,10 +21,24 @@ const CategoryInput = () => {
   const [isStoring, setIsStoring] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   
+  const mainInputRef = useRef<HTMLInputElement>(null);
+  const additionalInputRef = useRef<HTMLInputElement>(null);
+  const generateButtonRef = useRef<HTMLButtonElement>(null);
+  
   useEffect(() => {
-    const apiKey = getApiKey();
-    setShowApiKey(!apiKey);
-  }, []);
+    // Only check API key for categories that need generation
+    if (needsGeneration()) {
+      const apiKey = getApiKey();
+      setShowApiKey(!apiKey);
+    }
+    
+    // Focus on main input when component mounts
+    setTimeout(() => {
+      if (mainInputRef.current) {
+        mainInputRef.current.focus();
+      }
+    }, 100);
+  }, [category]);
   
   const needsGeneration = (): boolean => {
     return !['questions', 'business', 'other'].includes(category || '');
@@ -83,7 +98,7 @@ const CategoryInput = () => {
       return;
     }
     
-    if (!getApiKey()) {
+    if (needsGeneration() && !getApiKey()) {
       setShowApiKey(true);
       toast({
         title: "API key required",
@@ -190,6 +205,13 @@ const CategoryInput = () => {
       setAdditionalInput("");
       setGeneratedContent("");
       setIsStoring(false);
+      
+      // Focus back on main input after saving
+      setTimeout(() => {
+        if (mainInputRef.current) {
+          mainInputRef.current.focus();
+        }
+      }, 100);
     } catch (error) {
       console.error("Error storing entry:", error);
       toast({
@@ -200,6 +222,32 @@ const CategoryInput = () => {
       setIsStoring(false);
     }
   };
+  
+  // Handle keyboard shortcuts
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    // Enter key to submit
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      
+      if (needsGeneration()) {
+        if (!generatedContent && input.trim()) {
+          handleGenerate();
+        } else if (generatedContent) {
+          handleStore();
+        }
+      } else {
+        if (input.trim()) {
+          handleSaveWithoutGeneration();
+        }
+      }
+    }
+    
+    // Tab key to regenerate
+    if (e.key === 'Tab' && generatedContent && needsGeneration()) {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -207,7 +255,7 @@ const CategoryInput = () => {
       
       <main className="flex-1 px-4 py-6 max-w-3xl mx-auto w-full">
         <div className="space-y-6 animate-fade-in">
-          {showApiKey && (
+          {showApiKey && needsGeneration() && (
             <div className="mb-8 animate-fade-in">
               <ApiKeyInput />
               <div className="flex justify-center mt-4">
@@ -227,9 +275,11 @@ const CategoryInput = () => {
             </label>
             <input
               id="main-input"
+              ref={mainInputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder={getInputPlaceholder()}
               className="w-full px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
             />
@@ -242,9 +292,11 @@ const CategoryInput = () => {
               </label>
               <input
                 id="additional-input"
+                ref={additionalInputRef}
                 type="text"
                 value={additionalInput}
                 onChange={(e) => setAdditionalInput(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={getAdditionalInputPlaceholder() || ""}
                 className="w-full px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
               />
@@ -254,6 +306,7 @@ const CategoryInput = () => {
           {needsGeneration() ? (
             <>
               <Button 
+                ref={generateButtonRef}
                 onClick={handleGenerate} 
                 disabled={isGenerating || !input.trim()}
                 className="w-full"
@@ -298,8 +351,24 @@ const CategoryInput = () => {
           
           {generatedContent && (
             <div className="mt-8 animate-fade-in">
-              <h3 className="text-lg font-medium mb-2">Generated Content</h3>
-              <div className="p-4 rounded-lg border border-border bg-muted/30 whitespace-pre-wrap">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium">Generated Content</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Regenerate
+                </Button>
+              </div>
+              <div 
+                className="p-4 rounded-lg border border-border bg-muted/30 whitespace-pre-wrap"
+                onKeyDown={handleKeyDown}
+                tabIndex={0}
+              >
                 {generatedContent}
               </div>
               

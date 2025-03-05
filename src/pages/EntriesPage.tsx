@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { EntriesTable } from "@/components/EntriesTable";
-import { EntryType } from "@/utils/storage";
+import { EntryType, getAllEntries } from "@/utils/storage";
 import { Button } from "@/components/Button";
 import { useNavigate } from "react-router-dom";
 
@@ -18,7 +18,14 @@ const EntryTypes: { value: EntryType; label: string }[] = [
 const EntriesPage = () => {
   const [selectedType, setSelectedType] = useState<EntryType | undefined>(undefined);
   const [refreshFlag, setRefreshFlag] = useState(0);
+  const [hasEntries, setHasEntries] = useState(false);
   const navigate = useNavigate();
+  
+  // Check if there are any entries
+  useEffect(() => {
+    const entries = getAllEntries();
+    setHasEntries(entries.length > 0);
+  }, [refreshFlag]);
   
   const handleRefresh = () => {
     setRefreshFlag(prev => prev + 1);
@@ -69,7 +76,7 @@ const EntriesPage = () => {
             </h2>
             
             <EntriesTable 
-              key={refreshFlag}
+              key={`${selectedType || 'all'}-${refreshFlag}`}
               type={selectedType} 
               onUpdate={handleRefresh}
             />

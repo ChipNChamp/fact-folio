@@ -23,7 +23,6 @@ export const FlashCard = ({
   className
 }: FlashCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   // Reset flip state when entry changes
   useEffect(() => {
@@ -31,15 +30,7 @@ export const FlashCard = ({
   }, [entry]);
 
   const handleFlip = () => {
-    if (isAnimating) return;
-    
-    setIsAnimating(true);
     setIsFlipped(!isFlipped);
-    
-    // Reset animation state after animation completes
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 600); // Match the animation duration
   };
 
   const handleKnowledge = (level: number) => {
@@ -54,18 +45,15 @@ export const FlashCard = ({
   };
 
   return (
-    <div className={cn("w-full max-w-md perspective", className)}>
+    <div className={cn("w-full max-w-md", className)}>
       <div 
-        className={cn(
-          "w-full h-[340px] sm:h-[400px] preserve-3d cursor-pointer transition-all duration-500 relative",
-          isFlipped ? "animate-flip" : "animate-flip-back"
-        )}
+        className="w-full h-[340px] sm:h-[400px] relative cursor-pointer"
         onClick={handleFlip}
       >
         {/* Front of card (Output) */}
         <div className={cn(
-          "absolute w-full h-full backface-hidden rounded-2xl p-6 bg-white/90 dark:bg-gray-800/90 shadow-lg border border-border/50 flex flex-col",
-          isFlipped && "invisible"
+          "absolute w-full h-full rounded-2xl p-6 bg-white/90 dark:bg-gray-800/90 shadow-lg border border-border/50 flex flex-col",
+          isFlipped && "hidden"
         )}>
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4 overflow-y-auto">
             <pre className="whitespace-pre-wrap font-sans text-base sm:text-lg">
@@ -79,8 +67,8 @@ export const FlashCard = ({
         
         {/* Back of card (Input) */}
         <div className={cn(
-          "absolute w-full h-full backface-hidden rounded-2xl p-6 bg-white/90 dark:bg-gray-800/90 shadow-lg border border-border/50 flex flex-col rotate-y-180",
-          !isFlipped && "invisible"
+          "absolute w-full h-full rounded-2xl p-6 bg-white/90 dark:bg-gray-800/90 shadow-lg border border-border/50 flex flex-col",
+          !isFlipped && "hidden"
         )}>
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
             <h3 className="text-xl sm:text-2xl font-semibold mb-3">{entry.input}</h3>
