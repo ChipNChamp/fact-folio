@@ -1,3 +1,4 @@
+
 import { EntryData, EntryType } from './storage';
 
 // Define the sync event names
@@ -166,9 +167,10 @@ export const initializeSync = async () => {
   if ('serviceWorker' in navigator) {
     try {
       // Register for sync events if the API is available
-      navigator.serviceWorker.ready.then(registration => {
-        // Check if the sync API is available
-        if ('sync' in registration) {
+      navigator.serviceWorker.ready.then((registration) => {
+        // Properly type-check and access the sync property
+        if ('sync' in registration && registration.sync) {
+          // Now TypeScript knows registration.sync exists and is not unknown
           registration.sync.register(SYNC_EVENT_KEY).catch(err => {
             console.error('Background sync registration failed:', err);
           });
