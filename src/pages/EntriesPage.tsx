@@ -5,7 +5,7 @@ import { EntriesTable } from "@/components/EntriesTable";
 import { EntryType, getAllEntries } from "@/utils/storage";
 import { Button } from "@/components/Button";
 import { useNavigate } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "@/hooks/use-mobile";
 
 const EntryTypes: { value: EntryType; label: string }[] = [
   { value: "vocabulary", label: "Vocabulary" },
@@ -20,7 +20,7 @@ const EntriesPage = () => {
   const [selectedType, setSelectedType] = useState<EntryType | undefined>(undefined);
   const [refreshFlag, setRefreshFlag] = useState(0);
   const [hasEntries, setHasEntries] = useState(false);
-  const isMobile = useIsMobile();
+  const isMobile = useMobile();
   const navigate = useNavigate();
   
   // Check if there are any entries

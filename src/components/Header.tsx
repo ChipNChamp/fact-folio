@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "./Button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   title: string;
@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export const Header = ({ title, showBackButton = true }: HeaderProps) => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  const isMobile = useMobile();
   
   const handleBack = () => {
     navigate(-1);
