@@ -1,31 +1,31 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import CategoryInput from "./pages/CategoryInput";
-import Review from "./pages/Review";
-import NotFound from "./pages/NotFound";
+import { Toaster } from "@/components/ui/toaster";
+import IndexPage from "@/pages/Index";
+import ReviewPage from "@/pages/Review";
+import CategoryInput from "@/pages/CategoryInput";
+import EntriesPage from "@/pages/EntriesPage";
+import NotFound from "@/pages/NotFound";
+import "./App.css";
 
-const queryClient = new QueryClient();
+function App() {
+  useEffect(() => {
+    document.title = "Knowledge Base";
+  }, []);
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<IndexPage />} />
+        <Route path="/review" element={<ReviewPage />} />
+        <Route path="/entries" element={<EntriesPage />} />
+        <Route path="/add/:category" element={<CategoryInput />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/input/:category" element={<CategoryInput />} />
-          <Route path="/review" element={<Review />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </BrowserRouter>
+  );
+}
 
 export default App;

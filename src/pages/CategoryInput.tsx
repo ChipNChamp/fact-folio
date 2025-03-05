@@ -25,6 +25,10 @@ const CategoryInput = () => {
     setShowApiKey(!apiKey);
   }, []);
   
+  const needsGeneration = (): boolean => {
+    return !['questions', 'business', 'other'].includes(category || '');
+  };
+  
   const getCategoryTitle = (): string => {
     switch (category) {
       case "vocabulary": return "Add Vocabulary";
@@ -108,6 +112,52 @@ const CategoryInput = () => {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+  
+  const handleSaveWithoutGeneration = () => {
+    if (!input.trim()) {
+      toast({
+        title: "Input required",
+        description: "Please enter something first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsStoring(true);
+    
+    try {
+      const contentToSave = category === 'questions' 
+        ? `Question recorded: ${input}`
+        : category === 'business'
+        ? `Business fact recorded: ${input}`
+        : `Information recorded: ${input}`;
+      
+      addEntry(
+        category as EntryType,
+        input,
+        contentToSave,
+        additionalInput || undefined
+      );
+      
+      toast({
+        title: "Success",
+        description: "Entry saved successfully",
+      });
+      
+      setInput("");
+      setAdditionalInput("");
+      setGeneratedContent("");
+      setIsStoring(false);
+    } catch (error) {
+      console.error("Error storing entry:", error);
+      toast({
+        title: "Save failed",
+        description: "Could not save the entry. Please try again.",
+        variant: "destructive",
+      });
+      setIsStoring(false);
     }
   };
   
@@ -201,30 +251,49 @@ const CategoryInput = () => {
             </div>
           )}
           
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating || !input.trim()}
-            className="w-full"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                Generating...
-              </>
-            ) : (
-              <>Generate</>
-            )}
-          </Button>
-          
-          {!showApiKey && (
-            <div className="flex justify-center">
-              <button 
-                onClick={() => setShowApiKey(!showApiKey)} 
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          {needsGeneration() ? (
+            <>
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isGenerating || !input.trim()}
+                className="w-full"
               >
-                {getApiKey() ? "Edit API Key" : "Set API Key"}
-              </button>
-            </div>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                    Generating...
+                  </>
+                ) : (
+                  <>Generate</>
+                )}
+              </Button>
+              
+              {!showApiKey && (
+                <div className="flex justify-center">
+                  <button 
+                    onClick={() => setShowApiKey(!showApiKey)} 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {getApiKey() ? "Edit API Key" : "Set API Key"}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <Button 
+              onClick={handleSaveWithoutGeneration} 
+              disabled={isStoring || !input.trim()}
+              className="w-full"
+            >
+              {isStoring ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                  Saving...
+                </>
+              ) : (
+                <>Save Entry</>
+              )}
+            </Button>
           )}
           
           {generatedContent && (

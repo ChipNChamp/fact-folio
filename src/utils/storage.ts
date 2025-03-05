@@ -1,4 +1,3 @@
-
 export type EntryType = 'vocabulary' | 'phrases' | 'definitions' | 'questions' | 'business' | 'other';
 
 export interface EntryData {
@@ -104,6 +103,16 @@ export const getEntriesForReview = (count: number = 10): EntryData[] => {
   }
   
   return reviewEntries;
+};
+
+// Update an existing entry
+export const updateEntry = (updatedEntry: EntryData): void => {
+  const entries = getAllEntries();
+  const updatedEntries = entries.map(entry => 
+    entry.id === updatedEntry.id ? updatedEntry : entry
+  );
+  
+  localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
 };
 
 // Delete an entry
