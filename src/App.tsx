@@ -9,6 +9,7 @@ import EntriesPage from "@/pages/EntriesPage";
 import NotFound from "@/pages/NotFound";
 import { PasswordProtection } from "@/components/PasswordProtection";
 import { initializeStorage } from "@/utils/storage";
+import { manualSync } from "@/utils/syncStorage";
 import "./App.css";
 
 function App() {
@@ -18,9 +19,19 @@ function App() {
     // Initialize storage and sync when app starts
     const initStorage = async () => {
       await initializeStorage();
+      
+      // Sync whenever the app loads
+      manualSync();
     };
     
     initStorage();
+    
+    // Set up a periodic sync for when the app is open
+    const syncInterval = setInterval(manualSync, 60000); // Sync every minute
+    
+    return () => {
+      clearInterval(syncInterval);
+    };
   }, []);
 
   return (

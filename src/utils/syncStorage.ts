@@ -1,13 +1,9 @@
-
 import { EntryData, EntryType } from './storage';
 
-// Define the sync event names
 const SYNC_EVENT_KEY = 'knowledge-entries-sync';
 
-// Initialize db connection
 let db: IDBDatabase | null = null;
 
-// Open the IndexedDB database
 const openDatabase = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     if (db) {
@@ -36,7 +32,6 @@ const openDatabase = (): Promise<IDBDatabase> => {
   });
 };
 
-// Get all entries from IndexedDB
 export const getAllEntriesFromDB = async (): Promise<EntryData[]> => {
   try {
     const db = await openDatabase();
@@ -56,13 +51,11 @@ export const getAllEntriesFromDB = async (): Promise<EntryData[]> => {
     });
   } catch (error) {
     console.error('Failed to fetch entries:', error);
-    // Fall back to localStorage if IndexedDB fails
     const entries = localStorage.getItem('knowledge-entries');
     return entries ? JSON.parse(entries) : [];
   }
 };
 
-// Add or update an entry in IndexedDB
 export const saveEntryToDB = async (entry: EntryData): Promise<void> => {
   try {
     const db = await openDatabase();
@@ -82,7 +75,6 @@ export const saveEntryToDB = async (entry: EntryData): Promise<void> => {
     });
   } catch (error) {
     console.error('Failed to save entry:', error);
-    // Fallback to localStorage
     const entries = await getAllEntriesFromDB();
     const updatedEntries = entries.map(e => e.id === entry.id ? entry : e);
     
@@ -94,7 +86,6 @@ export const saveEntryToDB = async (entry: EntryData): Promise<void> => {
   }
 };
 
-// Delete an entry from IndexedDB
 export const deleteEntryFromDB = async (id: string): Promise<void> => {
   try {
     const db = await openDatabase();
@@ -114,14 +105,12 @@ export const deleteEntryFromDB = async (id: string): Promise<void> => {
     });
   } catch (error) {
     console.error('Failed to delete entry:', error);
-    // Fallback to localStorage
     const entries = await getAllEntriesFromDB();
     const updatedEntries = entries.filter(e => e.id !== id);
     localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
   }
 };
 
-// Clear all entries from IndexedDB
 export const clearAllEntriesFromDB = async (): Promise<void> => {
   try {
     const db = await openDatabase();
@@ -141,20 +130,42 @@ export const clearAllEntriesFromDB = async (): Promise<void> => {
     });
   } catch (error) {
     console.error('Failed to clear entries:', error);
-    // Fallback to localStorage
     localStorage.removeItem('knowledge-entries');
   }
 };
 
-// Get entries by type from IndexedDB
 export const getEntriesByTypeFromDB = async (type: EntryType): Promise<EntryData[]> => {
   const allEntries = await getAllEntriesFromDB();
   return allEntries.filter(entry => entry.type === type);
 };
 
-// Initialize sync mechanism
+const supportsBackgroundSync = () => {
+  return 'serviceWorker' in navigator && 'SyncManager' in window;
+};
+
+export const manualSync = async () => {
+  console.log('Performing manual sync');
+  
+  try {
+    const localStorageEntries = localStorage.getItem('knowledge-entries');
+    if (localStorageEntries) {
+      const entries: EntryData[] = JSON.parse(localStorageEntries);
+      for (const entry of entries) {
+        await saveEntryToDB(entry);
+      }
+      
+      const allEntries = await getAllEntriesFromDB();
+      localStorage.setItem('knowledge-entries', JSON.stringify(allEntries));
+    }
+    
+    localStorage.setItem('last-sync-time', Date.now().toString());
+    console.log('Manual sync completed');
+  } catch (error) {
+    console.error('Manual sync failed:', error);
+  }
+};
+
 export const initializeSync = async () => {
-  // First, ensure we migrate any existing localStorage data to IndexedDB
   const localStorageEntries = localStorage.getItem('knowledge-entries');
   if (localStorageEntries) {
     const entries: EntryData[] = JSON.parse(localStorageEntries);
@@ -163,37 +174,39 @@ export const initializeSync = async () => {
     }
   }
 
-  // Set up periodic sync if browser supports it
-  if ('serviceWorker' in navigator) {
+  if (supportsBackgroundSync()) {
     try {
-      // Register for sync events if the API is available
       navigator.serviceWorker.ready.then((registration) => {
-        // Properly type-check and access the sync property
-        if ('sync' in registration && registration.sync) {
-          // Now TypeScript knows registration.sync exists and is not unknown
-          registration.sync.register(SYNC_EVENT_KEY).catch(err => {
+        if ('sync' in registration) {
+          const syncManager = (registration as any).sync;
+          syncManager.register(SYNC_EVENT_KEY).catch((err: Error) => {
             console.error('Background sync registration failed:', err);
           });
         } else {
           console.log('Background Sync API not available in this browser');
+          setupManualSync();
         }
       });
     } catch (err) {
       console.error('Sync registration error:', err);
+      setupManualSync();
     }
   } else {
-    console.log('ServiceWorker not supported in this browser');
-    
-    // Alternative: set up a simple periodic check using local storage timestamp
-    setInterval(async () => {
-      const lastSyncTime = localStorage.getItem('last-sync-time');
-      const currentTime = Date.now().toString();
-      
-      // If it's been more than 5 minutes since last sync
-      if (!lastSyncTime || parseInt(lastSyncTime) < (Date.now() - 5 * 60 * 1000)) {
-        console.log('Performing manual sync check');
-        localStorage.setItem('last-sync-time', currentTime);
-      }
-    }, 60000); // Check every minute
+    console.log('Background Sync not supported in this browser');
+    setupManualSync();
   }
+};
+
+const setupManualSync = () => {
+  manualSync();
+  
+  setInterval(manualSync, 30000);
+  
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      manualSync();
+    }
+  });
+  
+  window.addEventListener('online', manualSync);
 };
