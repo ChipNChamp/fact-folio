@@ -28,9 +28,9 @@ const generatePrompt = (type: ContentType, input: string, additionalInput?: stri
       return `Provide a brief definition of the word "${input}" followed by two short example sentences. Format as:
 Definition: [very concise definition, fragment sentences OK]
 
-Example 1: [brief sentence]
+Example 1: [brief sentence using the word "${input}"]
 
-Example 2: [brief sentence]
+Example 2: [brief sentence using the word "${input}"]
 
 Keep all content extremely concise.`;
     
@@ -101,7 +101,23 @@ export const generateContent = async (type: ContentType, input: string, addition
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
+    let content = data.choices[0].message.content.trim();
+    
+    // For vocabulary entries, replace the input word with blanks in example sentences
+    if (type === 'vocabulary') {
+      const lines = content.split('\n');
+      const processedLines = lines.map(line => {
+        if (line.startsWith('Example')) {
+          // Create a regex that matches the word with word boundaries
+          const wordRegex = new RegExp(`\\b${input}\\b`, 'gi');
+          return line.replace(wordRegex, '_____');
+        }
+        return line;
+      });
+      content = processedLines.join('\n');
+    }
+    
+    return content;
   } catch (error) {
     console.error('Error generating content:', error);
     

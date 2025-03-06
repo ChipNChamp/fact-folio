@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Header } from "@/components/Header";
-import { Book, BookOpen, FileText, HelpCircle, Briefcase, FolderDot, RotateCcw } from "lucide-react";
+import { Book, BookOpen, FileText, HelpCircle, Briefcase, FolderDot } from "lucide-react";
 import { getAllEntries } from "@/utils/storage";
 import { useEffect, useState } from "react";
 
@@ -68,20 +68,13 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <Header title="Fact-Folio" showBackButton={false} />
       
-      <main className="flex-1 flex flex-col px-4 py-8 max-w-4xl mx-auto w-full">
-        <section className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-medium text-center mb-2">Knowledge Manager</h1>
-          <p className="text-muted-foreground text-center">
-            Capture and review your learning journey
-          </p>
-        </section>
-        
-        <section className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8 animate-slide-in">
+      <main className="flex-1 flex flex-col px-4 py-4 max-w-4xl mx-auto w-full">
+        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 animate-slide-in">
           {categories.map((category) => (
-            <div key={category.name} className="flex flex-col space-y-2">
+            <div key={category.name} className="flex flex-col space-y-1">
               <button
                 onClick={() => navigate(category.path)}
-                className={`rounded-xl p-4 flex flex-col items-center justify-center text-center h-32 transition-all duration-200 border border-border/30 ${category.color} shadow-sm hover:shadow-md hover:scale-[1.02]`}
+                className={`rounded-xl p-3 flex flex-col items-center justify-center text-center h-28 transition-all duration-200 border border-border/30 ${category.color} shadow-sm hover:shadow-md hover:scale-[1.02]`}
               >
                 {category.icon}
                 <span className="font-medium">{category.name}</span>
@@ -90,22 +83,21 @@ const Index = () => {
                 onClick={() => navigate(category.reviewPath)}
                 className={`rounded-lg p-1 flex items-center justify-center text-center text-xs font-medium transition-all duration-200 border border-border/30 ${category.color} bg-opacity-30 hover:bg-opacity-50`}
               >
-                <RotateCcw className="h-3 w-3 mr-1" /> Review
+                Review
               </button>
             </div>
           ))}
         </section>
         
-        <section className="mt-auto pb-8 flex flex-col items-center animate-slide-in" style={{ animationDelay: "0.2s" }}>
+        <section className="mt-2 mb-4 flex justify-center animate-slide-in" style={{ animationDelay: "0.2s" }}>
           <Button 
             size="wide" 
-            className="relative overflow-hidden group animate-floating"
+            className="relative overflow-hidden group"
             onClick={() => navigate("/review")}
             disabled={entryCount === 0}
           >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <RotateCcw className="mr-2 h-5 w-5" /> 
-            All Reviews ({entryCount})
+            Omni-Review
           </Button>
           
           {entryCount === 0 && (
