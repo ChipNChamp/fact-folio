@@ -13,10 +13,12 @@ import {
   Trash2, 
   Save, 
   X,
-  Download
+  Download,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
+import { manualSync } from "@/utils/syncStorage";
 
 interface EntriesTableProps {
   type?: EntryType;
@@ -27,6 +29,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const { toast } = useToast();
   const [entries, setEntries] = useState<EntryData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editInput, setEditInput] = useState("");
   const [editAdditionalInput, setEditAdditionalInput] = useState<string>("");
@@ -123,6 +126,26 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       setLoading(false);
     }
   };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await manualSync();
+      await refreshEntries();
+      toast({
+        title: "Sync complete",
+        description: "Entries have been synchronized",
+      });
+    } catch (error) {
+      toast({
+        title: "Sync failed",
+        description: "Could not synchronize entries",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
   
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString();
@@ -186,7 +209,17 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   
   return (
     <div className="overflow-x-auto animate-fade-in">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? "Syncing..." : "Sync Now"}
+        </Button>
         <Button 
           variant="outline" 
           size="sm" 

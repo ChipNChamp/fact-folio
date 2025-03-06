@@ -5,6 +5,7 @@ import { EntriesTable } from "@/components/EntriesTable";
 import { EntryType, getAllEntries, initializeStorage } from "@/utils/storage";
 import { Button } from "@/components/Button";
 import { useNavigate } from "react-router-dom";
+import { manualSync } from "@/utils/syncStorage";
 
 const EntryTypes: { value: EntryType; label: string }[] = [
   { value: "vocabulary", label: "Vocabulary" },
@@ -26,6 +27,7 @@ const EntriesPage = () => {
   useEffect(() => {
     const init = async () => {
       await initializeStorage();
+      await manualSync(); // Sync with Supabase on load
       setIsLoading(false);
     };
     
