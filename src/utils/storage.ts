@@ -18,7 +18,8 @@ import {
   deleteEntryFromDB, 
   clearAllEntriesFromDB, 
   initializeSync,
-  addToDeletedEntries
+  addToDeletedEntries,
+  getDeletedEntries
 } from './syncStorage';
 
 // Generate a unique ID
@@ -26,14 +27,22 @@ const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-// Get all entries
+// Get all entries excluding those marked for deletion
 export const getAllEntries = async (): Promise<EntryData[]> => {
-  return await getAllEntriesFromDB();
+  const entries = await getAllEntriesFromDB();
+  const deletedIds = getDeletedEntries();
+  
+  // Filter out any entries that are marked for deletion
+  return entries.filter(entry => !deletedIds.includes(entry.id));
 };
 
-// Get entries of a specific type
+// Get entries of a specific type excluding those marked for deletion
 export const getEntriesByType = async (type: EntryType): Promise<EntryData[]> => {
-  return await getEntriesByTypeFromDB(type);
+  const entries = await getEntriesByTypeFromDB(type);
+  const deletedIds = getDeletedEntries();
+  
+  // Filter out any entries that are marked for deletion
+  return entries.filter(entry => !deletedIds.includes(entry.id));
 };
 
 // Add a new entry
@@ -70,7 +79,7 @@ export const updateEntryKnowledge = async (id: string, knowledge: number): Promi
 
 // Get entries for review
 export const getEntriesForReview = async (count: number = 10): Promise<EntryData[]> => {
-  const allEntries = await getAllEntriesFromDB();
+  const allEntries = await getAllEntries(); // This will already filter out deleted entries
   
   if (allEntries.length === 0) return [];
   

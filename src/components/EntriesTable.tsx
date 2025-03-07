@@ -54,7 +54,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       // Update UI to remove the entry
       setEntries(entries.filter(entry => entry.id !== id));
       
-      // Now sync with Supabase
+      // Now sync with Supabase to properly mark the entry as deleted
       await manualSync();
       
       toast({
