@@ -25,8 +25,8 @@ export const clearApiKey = (): void => {
 const generatePrompt = (type: ContentType, input: string, additionalInput?: string): string => {
   switch (type) {
     case 'vocabulary':
-      return `Provide a brief definition of the word "${input}" followed by two short example sentences. Format as:
-Definition: [very concise definition, fragment sentences OK]
+      return `Provide an extremely brief definition of the word "${input}" (5-10 words max) followed by two short example sentences. Format as:
+Definition: [very concise definition, 5-10 words only]
 
 Example 1: [brief sentence using the word "${input}"]
 

@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { FlashCard } from "@/components/FlashCard";
 import { Button } from "@/components/Button";
+import { AudioReview } from "@/components/AudioReview";
 import { getEntriesForReview, getEntriesByType, EntryData, EntryType } from "@/utils/storage";
-import { RotateCcw, AlertCircle } from "lucide-react";
+import { RotateCcw, AlertCircle, Volume2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Review = () => {
@@ -11,6 +13,7 @@ const Review = () => {
   const [reviewEntries, setReviewEntries] = useState<EntryData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [audioMode, setAudioMode] = useState(false);
   const navigate = useNavigate();
   
   // Load review entries on mount or when category changes
@@ -71,6 +74,15 @@ const Review = () => {
       setIsLoading(false);
     }
   };
+
+  // Toggle audio review mode
+  const toggleAudioMode = () => {
+    setAudioMode(!audioMode);
+  };
+  
+  if (audioMode) {
+    return <AudioReview onClose={() => setAudioMode(false)} type={category} />;
+  }
   
   if (isLoading) {
     return (
@@ -117,10 +129,18 @@ const Review = () => {
       
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md relative">
-          <div className="text-center mb-2">
+          <div className="text-center mb-2 flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
               {currentIndex + 1} of {reviewEntries.length}
             </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleAudioMode}
+              className="flex items-center"
+            >
+              <Volume2 className="h-4 w-4 mr-1" /> Audio Mode
+            </Button>
           </div>
           
           <FlashCard
