@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -40,9 +41,19 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const handleDelete = async (id: string) => {
     try {
       setLoading(true);
+      
+      // Delete from Supabase and local storage
       await deleteEntry(id);
+      
+      // Update UI immediately
       setEntries(entries.filter(entry => entry.id !== id));
+      
+      // Force a sync to ensure consistency
       await manualSync();
+      
+      // Refresh entries after sync to make sure we have the correct state
+      await refreshEntries();
+      
       toast({
         title: "Entry deleted",
         description: "The entry has been removed and synced",
@@ -240,86 +251,84 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         </thead>
         <tbody>
           {entries.map(entry => (
-            <React.Fragment key={entry.id}>
-              <tr className="border-b border-border hover:bg-muted/20">
-                <td className="p-3">
-                  {editingId === entry.id ? (
-                    <input
-                      type="text"
-                      value={editInput}
-                      onChange={(e) => setEditInput(e.target.value)}
-                      className="w-full p-2 border rounded"
-                      autoFocus
-                    />
-                  ) : (
-                    entry.input
-                  )}
-                </td>
-                
-                <td className="p-3">
-                  {editingId === entry.id ? (
-                    <textarea
-                      value={editOutput}
-                      onChange={(e) => setEditOutput(e.target.value)}
-                      className="w-full p-2 border rounded min-h-[50px]"
-                      rows={2}
-                    />
-                  ) : (
-                    <div className="max-h-[80px] overflow-y-auto text-sm">
-                      {entry.output}
-                    </div>
-                  )}
-                </td>
-                
-                <td className="p-3 whitespace-nowrap">
-                  {formatDate(entry.createdAt)}
-                </td>
-                
-                <td className="p-3 whitespace-nowrap">
-                  <div className="flex space-x-2">
-                    {editingId === entry.id ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => saveEdit(entry)}
-                          title="Save changes"
-                        >
-                          <Save className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={cancelEditing}
-                          title="Cancel"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => startEditing(entry)}
-                          title="Edit entry"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(entry.id)}
-                          title="Delete entry"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
+            <tr key={entry.id} className="border-b border-border hover:bg-muted/20">
+              <td className="p-3">
+                {editingId === entry.id ? (
+                  <input
+                    type="text"
+                    value={editInput}
+                    onChange={(e) => setEditInput(e.target.value)}
+                    className="w-full p-2 border rounded"
+                    autoFocus
+                  />
+                ) : (
+                  entry.input
+                )}
+              </td>
+              
+              <td className="p-3">
+                {editingId === entry.id ? (
+                  <textarea
+                    value={editOutput}
+                    onChange={(e) => setEditOutput(e.target.value)}
+                    className="w-full p-2 border rounded min-h-[50px]"
+                    rows={2}
+                  />
+                ) : (
+                  <div className="max-h-[80px] overflow-y-auto text-sm">
+                    {entry.output}
                   </div>
-                </td>
-              </tr>
-            </React.Fragment>
+                )}
+              </td>
+              
+              <td className="p-3 whitespace-nowrap">
+                {formatDate(entry.createdAt)}
+              </td>
+              
+              <td className="p-3 whitespace-nowrap">
+                <div className="flex space-x-2">
+                  {editingId === entry.id ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => saveEdit(entry)}
+                        title="Save changes"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={cancelEditing}
+                        title="Cancel"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => startEditing(entry)}
+                        title="Edit entry"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDelete(entry.id)}
+                        title="Delete entry"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </td>
+            </tr>
           ))}
         </tbody>
       </table>

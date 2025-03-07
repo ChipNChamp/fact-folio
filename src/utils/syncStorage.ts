@@ -119,6 +119,8 @@ export const clearDeletedEntries = async (ids: string[]): Promise<void> => {
 
 export const deleteEntryFromDB = async (id: string): Promise<void> => {
   try {
+    console.log(`Attempting to delete entry with ID: ${id} from Supabase`);
+    
     // First delete from Supabase to ensure it's deleted server-side
     const { error } = await supabase
       .from('knowledge_entries')
@@ -132,6 +134,9 @@ export const deleteEntryFromDB = async (id: string): Promise<void> => {
     } else {
       console.log(`Entry ${id} deleted from Supabase successfully`);
     }
+    
+    // Add to deleted entries list even if successful to prevent future syncs
+    await addToDeletedEntries(id);
     
     // Delete from IndexedDB
     const db = await openDatabase();
@@ -202,8 +207,38 @@ const syncWithSupabase = async () => {
     
     // Get deleted entries list
     const deletedEntryIds = getDeletedEntries();
+    console.log('Currently deleted entry IDs:', deletedEntryIds);
+    
+    // Delete entries from Supabase that are in the deleted list
+    if (deletedEntryIds.length > 0) {
+      console.log(`Deleting ${deletedEntryIds.length} entries from Supabase`);
+      
+      // Perform deletion for each ID individually to catch any failures
+      const successfullyDeletedIds = [];
+      
+      for (const id of deletedEntryIds) {
+        const { error } = await supabase
+          .from('knowledge_entries')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error(`Error deleting entry ${id} from Supabase:`, error);
+        } else {
+          console.log(`Entry ${id} deleted from Supabase successfully`);
+          successfullyDeletedIds.push(id);
+        }
+      }
+      
+      // Clear successfully deleted entries from tracking list
+      if (successfullyDeletedIds.length > 0) {
+        await clearDeletedEntries(successfullyDeletedIds);
+        console.log('Cleared successfully deleted entries from tracking list');
+      }
+    }
     
     // Get entries from Supabase that were updated since the last sync
+    // but exclude the ones that we know were deleted
     const { data: remoteEntries, error: fetchError } = await supabase
       .from('knowledge_entries')
       .select('*')
@@ -214,13 +249,16 @@ const syncWithSupabase = async () => {
       return;
     }
     
+    // Get an updated list of deleted entries (after potential clearing)
+    const updatedDeletedEntryIds = getDeletedEntries();
+    
     // Process remote entries and update local storage
     if (remoteEntries && remoteEntries.length > 0) {
       console.log(`Found ${remoteEntries.length} entries to sync from Supabase`);
       
       for (const remoteEntry of remoteEntries) {
         // Skip entries that are in the deleted list
-        if (deletedEntryIds.includes(remoteEntry.id)) {
+        if (updatedDeletedEntryIds.includes(remoteEntry.id)) {
           console.log(`Skipping deleted entry: ${remoteEntry.id}`);
           continue;
         }
@@ -244,7 +282,7 @@ const syncWithSupabase = async () => {
     // Upload local entries to Supabase
     for (const localEntry of localEntries) {
       // Skip entries that are in the deleted list
-      if (deletedEntryIds.includes(localEntry.id)) {
+      if (updatedDeletedEntryIds.includes(localEntry.id)) {
         console.log(`Skipping deleted entry from upload: ${localEntry.id}`);
         continue;
       }
@@ -264,24 +302,6 @@ const syncWithSupabase = async () => {
       
       if (upsertError) {
         console.error('Error upserting to Supabase:', upsertError);
-      }
-    }
-    
-    // Delete entries from Supabase that are in the deleted list
-    if (deletedEntryIds.length > 0) {
-      console.log(`Deleting ${deletedEntryIds.length} entries from Supabase`);
-      
-      const { error: deleteError, data: deleteData } = await supabase
-        .from('knowledge_entries')
-        .delete()
-        .in('id', deletedEntryIds);
-      
-      if (deleteError) {
-        console.error('Error deleting entries from Supabase:', deleteError);
-      } else {
-        console.log('Deleted entries from Supabase successfully');
-        // Clear the successfully deleted entries from our tracking list
-        await clearDeletedEntries(deletedEntryIds);
       }
     }
     
