@@ -55,6 +55,46 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     };
   }, [type]);
 
+  // Get the best available voice that sounds natural
+  const getBestVoice = () => {
+    if (!speechSynthesisRef.current) return null;
+    
+    const voices = speechSynthesisRef.current.getVoices();
+    
+    // Priority order for voice selection:
+    // 1. Look for premium voices (often contain keywords like premium, enhanced, neural)
+    const premiumVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes("premium") || 
+      voice.name.toLowerCase().includes("enhanced") ||
+      voice.name.toLowerCase().includes("neural") ||
+      voice.name.toLowerCase().includes("natural")
+    );
+    
+    if (premiumVoice) return premiumVoice;
+    
+    // 2. Look for specific voice names known to be good
+    const preferredVoiceNames = [
+      "Google UK English Female", "Google UK English Male",
+      "Microsoft Zira", "Microsoft David", 
+      "Samantha", "Alex", "Daniel"
+    ];
+    
+    for (const name of preferredVoiceNames) {
+      const voice = voices.find(v => v.name === name);
+      if (voice) return voice;
+    }
+    
+    // 3. Fall back to any English voice
+    const englishVoice = voices.find(voice => 
+      voice.lang.includes('en-') || voice.lang.includes('en_')
+    );
+    
+    if (englishVoice) return englishVoice;
+    
+    // 4. Last resort: use any available voice
+    return voices[0] || null;
+  };
+
   // Play the current entry
   const playCurrentEntry = () => {
     if (!entries.length || !speechSynthesisRef.current) return;
@@ -66,17 +106,35 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     
     // Speak the front of the card (output)
     const frontUtterance = new SpeechSynthesisUtterance(entry.output);
+    const bestVoice = getBestVoice();
+    
+    if (bestVoice) {
+      frontUtterance.voice = bestVoice;
+    }
+    
+    // Enhance speech parameters for more natural sound
+    frontUtterance.rate = 0.95; // Slightly slower for clarity
+    frontUtterance.pitch = 1.05; // Slightly higher pitch for engagement
+    frontUtterance.volume = 1.0; // Full volume
     
     frontUtterance.onstart = () => setSpeaking(true);
     frontUtterance.onend = () => {
       // Pause between front and back
       timerRef.current = window.setTimeout(() => {
-        // Speak the back of the card (input/answer)
-        const backUtterance = new SpeechSynthesisUtterance(`Answer: ${entry.input}`);
+        // Create answer text (no more additionalInput reference)
+        const answerText = `Answer: ${entry.input}`;
         
-        if (entry.additionalInput) {
-          backUtterance.text += `. ${entry.additionalInput}`;
+        // Speak the back of the card (input/answer)
+        const backUtterance = new SpeechSynthesisUtterance(answerText);
+        
+        if (bestVoice) {
+          backUtterance.voice = bestVoice;
         }
+        
+        // Match speech parameters
+        backUtterance.rate = 0.95;
+        backUtterance.pitch = 1.05;
+        backUtterance.volume = 1.0;
         
         backUtterance.onstart = () => setSpeaking(true);
         backUtterance.onend = () => {
@@ -165,6 +223,21 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
       playCurrentEntry();
     }
   }, [currentIndex, isPlaying]);
+
+  // Effect to initialize voices
+  useEffect(() => {
+    if (speechSynthesisRef.current) {
+      // Force load voices if they're not available
+      if (speechSynthesisRef.current.getVoices().length === 0) {
+        speechSynthesisRef.current.onvoiceschanged = () => {
+          // Voices loaded, potential re-render to get best voice
+          if (isPlaying) {
+            playCurrentEntry();
+          }
+        };
+      }
+    }
+  }, []);
 
   if (loading) {
     return (

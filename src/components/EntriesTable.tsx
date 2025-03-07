@@ -32,7 +32,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const [syncing, setSyncing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editInput, setEditInput] = useState("");
-  const [editAdditionalInput, setEditAdditionalInput] = useState<string>("");
   const [editOutput, setEditOutput] = useState("");
   
   useEffect(() => {
@@ -63,14 +62,12 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const startEditing = (entry: EntryData) => {
     setEditingId(entry.id);
     setEditInput(entry.input);
-    setEditAdditionalInput(entry.additionalInput || "");
     setEditOutput(entry.output);
   };
   
   const cancelEditing = () => {
     setEditingId(null);
     setEditInput("");
-    setEditAdditionalInput("");
     setEditOutput("");
   };
   
@@ -80,8 +77,9 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       const updatedEntry = {
         ...entry,
         input: editInput,
-        additionalInput: editAdditionalInput || undefined,
-        output: editOutput
+        output: editOutput,
+        // Removing additionalInput field completely
+        additionalInput: undefined
       };
       
       await updateEntry(updatedEntry);
@@ -161,10 +159,10 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       return;
     }
 
-    const headers = ["Input", "Additional Input", "Output", "Date", "Knowledge Level"];
+    // Remove additional input from the headers
+    const headers = ["Input", "Output", "Date", "Knowledge Level"];
     const rows = entries.map(entry => [
       `"${entry.input.replace(/"/g, '""')}"`,
-      `"${(entry.additionalInput || "").replace(/"/g, '""')}"`,
       `"${entry.output.replace(/"/g, '""')}"`,
       `"${new Date(entry.createdAt).toLocaleDateString()}"`,
       `"${entry.knowledge === -1 ? "Not Reviewed" : entry.knowledge === 0 ? "Fail" : entry.knowledge === 1 ? "Eh" : "Pass"}"`
@@ -234,9 +232,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         <thead>
           <tr className="bg-muted/50">
             <th className="p-3 text-left font-medium text-sm">Input</th>
-            {entries.some(e => e.additionalInput) && (
-              <th className="p-3 text-left font-medium text-sm">Additional</th>
-            )}
             <th className="p-3 text-left font-medium text-sm">Output</th>
             <th className="p-3 text-left font-medium text-sm">Date</th>
             <th className="p-3 text-left font-medium text-sm">Actions</th>
@@ -259,21 +254,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
                     entry.input
                   )}
                 </td>
-                
-                {entries.some(e => e.additionalInput) && (
-                  <td className="p-3">
-                    {editingId === entry.id ? (
-                      <input
-                        type="text"
-                        value={editAdditionalInput}
-                        onChange={(e) => setEditAdditionalInput(e.target.value)}
-                        className="w-full p-2 border rounded"
-                      />
-                    ) : (
-                      entry.additionalInput || "-"
-                    )}
-                  </td>
-                )}
                 
                 <td className="p-3">
                   {editingId === entry.id ? (
