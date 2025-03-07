@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -48,25 +49,26 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     try {
       setLoading(true);
       
-      await deleteEntry(id);
+      // Mark for deletion but don't delete locally yet
+      await addToDeletedEntries(id);
       
+      // Update UI to remove the entry
       setEntries(entries.filter(entry => entry.id !== id));
       
+      // Now sync with Supabase
       await manualSync();
       
-      await refreshEntries();
-      
       toast({
-        title: "Entry deleted",
-        description: "The entry has been removed and synced",
+        title: "Entry marked for deletion",
+        description: "The entry will be removed during sync",
       });
       
       if (onUpdate) onUpdate();
     } catch (error) {
-      console.error("Error deleting entry:", error);
+      console.error("Error marking entry for deletion:", error);
       toast({
         title: "Delete failed",
-        description: "Could not delete the entry. Please try again.",
+        description: "Could not mark the entry for deletion. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -86,17 +88,20 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     try {
       setLoading(true);
       
-      // Instead of deleting locally right away, just mark them for deletion in Supabase
+      // Mark all selected entries for deletion
       for (const id of selectedEntries) {
         await addToDeletedEntries(id);
       }
       
-      // Visual feedback - we'll still update the UI to hide these items
+      // Visual feedback - update UI to hide these items
       setEntries(entries.filter(entry => !selectedEntries.includes(entry.id)));
+      
+      // Now sync with Supabase to perform the actual deletion
+      await manualSync();
       
       toast({
         title: "Entries marked for deletion",
-        description: `${selectedEntries.length} entries have been marked for deletion. Click 'Sync Now' to complete the process.`,
+        description: `${selectedEntries.length} entries have been marked for deletion and synced with the server.`,
       });
       
       setSelectedEntries([]);
@@ -165,6 +170,10 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       });
       
       cancelEditing();
+      
+      // Sync after update
+      await manualSync();
+      
       if (onUpdate) onUpdate();
     } catch (error) {
       toast({
@@ -272,90 +281,103 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     return (
       <div className="text-center p-8 border rounded-lg bg-muted/30">
         <p className="text-muted-foreground">No entries found</p>
+        <Button 
+          variant="default"
+          size="sm" 
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 mt-4 mx-auto"
+        >
+          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? "Syncing..." : "Sync with Server"}
+        </Button>
       </div>
     );
   }
   
   return (
     <div className="overflow-x-auto animate-fade-in">
-      <div className="flex justify-between mb-4 gap-2">
-        <div className="flex gap-2">
-          <Button 
-            variant={selectMode ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setSelectMode(!selectMode)}
-            className="flex items-center gap-2"
-          >
-            {selectMode ? (
+      <div className="sticky top-0 z-10 bg-background p-4 border-b border-border mb-4">
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={selectMode ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setSelectMode(!selectMode)}
+              className="flex items-center gap-2"
+            >
+              {selectMode ? (
+                <>
+                  <XCircle className="h-4 w-4" />
+                  Cancel Selection
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="h-4 w-4" />
+                  Select Mode
+                </>
+              )}
+            </Button>
+            
+            {selectMode && (
               <>
-                <XCircle className="h-4 w-4" />
-                Cancel Selection
-              </>
-            ) : (
-              <>
-                <CheckSquare className="h-4 w-4" />
-                Select Mode
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={toggleSelectAll}
+                  className="flex items-center gap-2"
+                >
+                  {selectedEntries.length === entries.length ? (
+                    <>
+                      <Square className="h-4 w-4" />
+                      Deselect All
+                    </>
+                  ) : (
+                    <>
+                      <CheckSquare className="h-4 w-4" />
+                      Select All
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={handleBatchDelete}
+                  disabled={selectedEntries.length === 0}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedEntries.length})
+                </Button>
               </>
             )}
-          </Button>
+          </div>
           
-          {selectMode && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={toggleSelectAll}
-                className="flex items-center gap-2"
-              >
-                {selectedEntries.length === entries.length ? (
-                  <>
-                    <Square className="h-4 w-4" />
-                    Deselect All
-                  </>
-                ) : (
-                  <>
-                    <CheckSquare className="h-4 w-4" />
-                    Select All
-                  </>
-                )}
-              </Button>
-              
-              <Button 
-                variant="fail" 
-                size="sm" 
-                onClick={handleBatchDelete}
-                disabled={selectedEntries.length === 0}
-                className="flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Selected ({selectedEntries.length})
-              </Button>
-            </>
-          )}
-        </div>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={handleSync}
-            disabled={syncing}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? "Syncing..." : "Sync with Server"}
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={exportToCSV}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2 ml-auto">
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? "Syncing..." : "Sync Now"}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportToCSV}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
         </div>
       </div>
+      
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-muted/50">
