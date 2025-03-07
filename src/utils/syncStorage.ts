@@ -1,3 +1,4 @@
+
 import { EntryData, EntryType } from './storage';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -198,18 +199,11 @@ export const getEntriesByTypeFromDB = async (type: EntryType): Promise<EntryData
 const syncWithSupabase = async () => {
   console.log('Starting Supabase sync');
   try {
-    const lastSyncTime = localStorage.getItem(LAST_SYNC_KEY) 
-      ? parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0') 
-      : 0;
-    
-    // Fetch local entries
-    const localEntries = await getAllEntriesFromDB();
-    
-    // Get deleted entries list
+    // Get deleted entries list first
     const deletedEntryIds = getDeletedEntries();
     console.log('Currently deleted entry IDs:', deletedEntryIds);
     
-    // Delete entries from Supabase that are in the deleted list
+    // STEP 1: Process all deletions first and wait for them to complete
     if (deletedEntryIds.length > 0) {
       console.log(`Deleting ${deletedEntryIds.length} entries from Supabase`);
       
@@ -237,6 +231,44 @@ const syncWithSupabase = async () => {
       }
     }
     
+    // Get an updated list of deleted entries (after potential clearing)
+    const updatedDeletedEntryIds = getDeletedEntries();
+    
+    // STEP 2: Get the last sync time AFTER deletions are processed
+    const lastSyncTime = localStorage.getItem(LAST_SYNC_KEY) 
+      ? parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0') 
+      : 0;
+    
+    // STEP 3: Now fetch local entries for uploading to Supabase
+    const localEntries = await getAllEntriesFromDB();
+    
+    // Upload local entries to Supabase
+    for (const localEntry of localEntries) {
+      // Skip entries that are in the deleted list
+      if (updatedDeletedEntryIds.includes(localEntry.id)) {
+        console.log(`Skipping deleted entry from upload: ${localEntry.id}`);
+        continue;
+      }
+      
+      const { error: upsertError } = await supabase
+        .from('knowledge_entries')
+        .upsert({
+          id: localEntry.id,
+          type: localEntry.type,
+          input: localEntry.input,
+          output: localEntry.output,
+          additional_input: localEntry.additionalInput,
+          created_at: localEntry.createdAt,
+          knowledge: localEntry.knowledge,
+          last_synced_at: Date.now()
+        });
+      
+      if (upsertError) {
+        console.error('Error upserting to Supabase:', upsertError);
+      }
+    }
+    
+    // STEP 4: Finally, after all deletions and uploads are processed, fetch from Supabase
     // Get entries from Supabase that were updated since the last sync
     // but exclude the ones that we know were deleted
     const { data: remoteEntries, error: fetchError } = await supabase
@@ -248,9 +280,6 @@ const syncWithSupabase = async () => {
       console.error('Error fetching from Supabase:', fetchError);
       return;
     }
-    
-    // Get an updated list of deleted entries (after potential clearing)
-    const updatedDeletedEntryIds = getDeletedEntries();
     
     // Process remote entries and update local storage
     if (remoteEntries && remoteEntries.length > 0) {
@@ -276,32 +305,6 @@ const syncWithSupabase = async () => {
         
         // Save to local IndexedDB
         await saveEntryToDB(entry);
-      }
-    }
-    
-    // Upload local entries to Supabase
-    for (const localEntry of localEntries) {
-      // Skip entries that are in the deleted list
-      if (updatedDeletedEntryIds.includes(localEntry.id)) {
-        console.log(`Skipping deleted entry from upload: ${localEntry.id}`);
-        continue;
-      }
-      
-      const { error: upsertError } = await supabase
-        .from('knowledge_entries')
-        .upsert({
-          id: localEntry.id,
-          type: localEntry.type,
-          input: localEntry.input,
-          output: localEntry.output,
-          additional_input: localEntry.additionalInput,
-          created_at: localEntry.createdAt,
-          knowledge: localEntry.knowledge,
-          last_synced_at: Date.now()
-        });
-      
-      if (upsertError) {
-        console.error('Error upserting to Supabase:', upsertError);
       }
     }
     
