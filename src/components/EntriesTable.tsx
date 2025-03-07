@@ -47,16 +47,12 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     try {
       setLoading(true);
       
-      // Delete from Supabase and local storage
       await deleteEntry(id);
       
-      // Update UI immediately
       setEntries(entries.filter(entry => entry.id !== id));
       
-      // Force a sync to ensure consistency
       await manualSync();
       
-      // Refresh entries after sync to make sure we have the correct state
       await refreshEntries();
       
       toast({
@@ -89,17 +85,13 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     try {
       setLoading(true);
       
-      // Delete all selected entries
       const deletePromises = selectedEntries.map(id => deleteEntry(id));
       await Promise.all(deletePromises);
       
-      // Update UI immediately
       setEntries(entries.filter(entry => !selectedEntries.includes(entry.id)));
       
-      // Force a sync to ensure consistency
       await manualSync();
       
-      // Refresh entries after sync
       await refreshEntries();
       
       toast({
@@ -107,7 +99,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         description: `${selectedEntries.length} entries have been removed and synced`,
       });
       
-      // Clear selection
       setSelectedEntries([]);
       setSelectMode(false);
       
@@ -134,10 +125,8 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   
   const toggleSelectAll = () => {
     if (selectedEntries.length === entries.length) {
-      // If all are selected, unselect all
       setSelectedEntries([]);
     } else {
-      // Otherwise, select all
       setSelectedEntries(entries.map(e => e.id));
     }
   };
@@ -332,7 +321,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
               </Button>
               
               <Button 
-                variant="destructive" 
+                variant="fail" 
                 size="sm" 
                 onClick={handleBatchDelete}
                 disabled={selectedEntries.length === 0}
