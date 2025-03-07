@@ -67,7 +67,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Delete failed",
         description: "Could not delete the entry. Please try again.",
-        variant: "fail",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -79,7 +79,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "No entries selected",
         description: "Please select entries to delete",
-        variant: "fail",
+        variant: "destructive",
       });
       return;
     }
@@ -112,7 +112,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Operation failed",
         description: "Could not delete some entries. Please try again.",
-        variant: "fail",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -178,7 +178,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Update failed",
         description: "Could not update the entry",
-        variant: "fail",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -197,7 +197,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Error",
         description: "Failed to load entries",
-        variant: "fail",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -218,7 +218,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Sync failed",
         description: "Could not synchronize entries with the server",
-        variant: "fail",
+        variant: "destructive",
       });
     } finally {
       setSyncing(false);
@@ -234,7 +234,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Export failed",
         description: "No entries to export",
-        variant: "fail",
+        variant: "destructive",
       });
       return;
     }
