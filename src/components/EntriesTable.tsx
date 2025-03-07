@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -14,11 +13,15 @@ import {
   Save, 
   X,
   Download,
-  RefreshCw
+  RefreshCw,
+  CheckSquare,
+  Square,
+  XCircle
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
 import { manualSync } from "@/utils/syncStorage";
+import { Input } from "@/components/ui/input";
 
 interface EntriesTableProps {
   type?: EntryType;
@@ -33,6 +36,8 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editInput, setEditInput] = useState("");
   const [editOutput, setEditOutput] = useState("");
+  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [selectMode, setSelectMode] = useState(false);
   
   useEffect(() => {
     refreshEntries();
@@ -69,6 +74,71 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedEntries.length === 0) {
+      toast({
+        title: "No entries selected",
+        description: "Please select entries to delete",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Delete all selected entries
+      const deletePromises = selectedEntries.map(id => deleteEntry(id));
+      await Promise.all(deletePromises);
+      
+      // Update UI immediately
+      setEntries(entries.filter(entry => !selectedEntries.includes(entry.id)));
+      
+      // Force a sync to ensure consistency
+      await manualSync();
+      
+      // Refresh entries after sync
+      await refreshEntries();
+      
+      toast({
+        title: "Entries deleted",
+        description: `${selectedEntries.length} entries have been removed and synced`,
+      });
+      
+      // Clear selection
+      setSelectedEntries([]);
+      setSelectMode(false);
+      
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error("Error deleting entries:", error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete some entries. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const toggleSelectEntry = (id: string) => {
+    setSelectedEntries(prev => 
+      prev.includes(id) 
+        ? prev.filter(entryId => entryId !== id) 
+        : [...prev, id]
+    );
+  };
+  
+  const toggleSelectAll = () => {
+    if (selectedEntries.length === entries.length) {
+      // If all are selected, unselect all
+      setSelectedEntries([]);
+    } else {
+      // Otherwise, select all
+      setSelectedEntries(entries.map(e => e.id));
     }
   };
   
@@ -219,30 +289,90 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
   
   return (
     <div className="overflow-x-auto animate-fade-in">
-      <div className="flex justify-end mb-4 gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? "Syncing..." : "Sync Now"}
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={exportToCSV}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Export CSV
-        </Button>
+      <div className="flex justify-between mb-4 gap-2">
+        <div className="flex gap-2">
+          <Button 
+            variant={selectMode ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setSelectMode(!selectMode)}
+            className="flex items-center gap-2"
+          >
+            {selectMode ? (
+              <>
+                <XCircle className="h-4 w-4" />
+                Cancel Selection
+              </>
+            ) : (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                Select Mode
+              </>
+            )}
+          </Button>
+          
+          {selectMode && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleSelectAll}
+                className="flex items-center gap-2"
+              >
+                {selectedEntries.length === entries.length ? (
+                  <>
+                    <Square className="h-4 w-4" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-4 w-4" />
+                    Select All
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleBatchDelete}
+                disabled={selectedEntries.length === 0}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected ({selectedEntries.length})
+              </Button>
+            </>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? "Syncing..." : "Sync Now"}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={exportToCSV}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-muted/50">
+            {selectMode && (
+              <th className="p-3 text-left font-medium text-sm w-10"></th>
+            )}
             <th className="p-3 text-left font-medium text-sm">Input</th>
             <th className="p-3 text-left font-medium text-sm">Output</th>
             <th className="p-3 text-left font-medium text-sm">Date</th>
@@ -251,14 +381,33 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         </thead>
         <tbody>
           {entries.map(entry => (
-            <tr key={entry.id} className="border-b border-border hover:bg-muted/20">
+            <tr 
+              key={entry.id} 
+              className={`border-b border-border hover:bg-muted/20 ${selectedEntries.includes(entry.id) ? 'bg-muted/30' : ''}`}
+            >
+              {selectMode && (
+                <td className="p-3 text-center">
+                  <button 
+                    onClick={() => toggleSelectEntry(entry.id)} 
+                    className="cursor-pointer"
+                    aria-label={selectedEntries.includes(entry.id) ? "Deselect entry" : "Select entry"}
+                  >
+                    {selectedEntries.includes(entry.id) ? (
+                      <CheckSquare className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Square className="h-5 w-5" />
+                    )}
+                  </button>
+                </td>
+              )}
+              
               <td className="p-3">
                 {editingId === entry.id ? (
-                  <input
+                  <Input
                     type="text"
                     value={editInput}
                     onChange={(e) => setEditInput(e.target.value)}
-                    className="w-full p-2 border rounded"
+                    className="w-full"
                     autoFocus
                   />
                 ) : (
@@ -316,14 +465,16 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(entry.id)}
-                        title="Delete entry"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {!selectMode && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDelete(entry.id)}
+                          title="Delete entry"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
