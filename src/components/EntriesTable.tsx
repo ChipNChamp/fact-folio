@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -81,6 +80,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "No entries selected",
         description: "Please select entries to delete",
+        variant: "destructive",
       });
       return;
     }
@@ -341,7 +341,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
                 </Button>
                 
                 <Button 
-                  variant="destructive" 
+                  variant="fail" 
                   size="sm" 
                   onClick={handleBatchDelete}
                   disabled={selectedEntries.length === 0}
