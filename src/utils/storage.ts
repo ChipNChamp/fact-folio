@@ -9,6 +9,8 @@ export interface EntryData {
   additionalInput?: string;
   createdAt: number;
   knowledge: number; // 0 = fail, 1 = eh, 2 = pass, -1 = not reviewed
+  deleted?: boolean; // New flag to mark entries as deleted
+  deletedAt?: number; // Timestamp when the entry was deleted
 }
 
 import { 
@@ -19,7 +21,8 @@ import {
   clearAllEntriesFromDB, 
   initializeSync,
   addToDeletedEntries,
-  getDeletedEntries
+  getDeletedEntries,
+  markEntryAsDeleted
 } from './syncStorage';
 
 // Generate a unique ID
@@ -30,19 +33,17 @@ const generateId = (): string => {
 // Get all entries excluding those marked for deletion
 export const getAllEntries = async (): Promise<EntryData[]> => {
   const entries = await getAllEntriesFromDB();
-  const deletedIds = getDeletedEntries();
   
-  // Filter out any entries that are marked for deletion
-  return entries.filter(entry => !deletedIds.includes(entry.id));
+  // Filter out any entries that are marked as deleted
+  return entries.filter(entry => !entry.deleted);
 };
 
 // Get entries of a specific type excluding those marked for deletion
 export const getEntriesByType = async (type: EntryType): Promise<EntryData[]> => {
   const entries = await getEntriesByTypeFromDB(type);
-  const deletedIds = getDeletedEntries();
   
-  // Filter out any entries that are marked for deletion
-  return entries.filter(entry => !deletedIds.includes(entry.id));
+  // Filter out any entries that are marked as deleted
+  return entries.filter(entry => !entry.deleted);
 };
 
 // Add a new entry
@@ -128,10 +129,13 @@ export const updateEntry = async (updatedEntry: EntryData): Promise<void> => {
   await saveEntryToDB(updatedEntry);
 };
 
-// Delete an entry
+// Delete an entry - now marks it as deleted rather than removing completely
 export const deleteEntry = async (id: string): Promise<void> => {
-  // This will also add to deleted entries list
-  await deleteEntryFromDB(id);
+  // Mark the entry as deleted in our local database
+  await markEntryAsDeleted(id);
+  
+  // Also add to deleted entries list for backward compatibility
+  await addToDeletedEntries(id);
 };
 
 // Clear all entries

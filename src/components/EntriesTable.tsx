@@ -22,7 +22,6 @@ import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
 import { manualSync } from "@/utils/syncStorage";
 import { Input } from "@/components/ui/input";
-import { addToDeletedEntries } from "@/utils/syncStorage";
 
 interface EntriesTableProps {
   type?: EntryType;
@@ -48,27 +47,27 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     try {
       setLoading(true);
       
-      // Mark for deletion but don't delete locally yet
-      await addToDeletedEntries(id);
+      // Use the new deletion method which marks entries as deleted
+      await deleteEntry(id);
       
       // Update UI to remove the entry
       setEntries(entries.filter(entry => entry.id !== id));
       
-      // Now sync with Supabase to properly mark the entry as deleted
+      // Sync with Supabase to propagate the deletion
       await manualSync();
       
       toast({
-        title: "Entry marked for deletion",
-        description: "The entry will be removed during sync",
+        title: "Entry deleted",
+        description: "The entry has been marked for deletion and will be removed from all devices",
       });
       
       if (onUpdate) onUpdate();
     } catch (error) {
-      console.error("Error marking entry for deletion:", error);
+      console.error("Error deleting entry:", error);
       toast({
         title: "Delete failed",
-        description: "Could not mark the entry for deletion. Please try again.",
-        variant: "destructive",
+        description: "Could not delete the entry. Please try again.",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -80,7 +79,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "No entries selected",
         description: "Please select entries to delete",
-        variant: "destructive",
+        variant: "fail",
       });
       return;
     }
@@ -90,18 +89,18 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       
       // Mark all selected entries for deletion
       for (const id of selectedEntries) {
-        await addToDeletedEntries(id);
+        await deleteEntry(id);
       }
       
       // Visual feedback - update UI to hide these items
       setEntries(entries.filter(entry => !selectedEntries.includes(entry.id)));
       
-      // Now sync with Supabase to perform the actual deletion
+      // Sync with Supabase to propagate deletions
       await manualSync();
       
       toast({
-        title: "Entries marked for deletion",
-        description: `${selectedEntries.length} entries have been marked for deletion and synced with the server.`,
+        title: "Entries deleted",
+        description: `${selectedEntries.length} entries have been deleted and synced with the server.`,
       });
       
       setSelectedEntries([]);
@@ -109,11 +108,11 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       
       if (onUpdate) onUpdate();
     } catch (error) {
-      console.error("Error marking entries for deletion:", error);
+      console.error("Error deleting entries:", error);
       toast({
         title: "Operation failed",
-        description: "Could not mark some entries for deletion. Please try again.",
-        variant: "destructive",
+        description: "Could not delete some entries. Please try again.",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -179,7 +178,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Update failed",
         description: "Could not update the entry",
-        variant: "destructive",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -198,7 +197,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Error",
         description: "Failed to load entries",
-        variant: "destructive",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -219,7 +218,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Sync failed",
         description: "Could not synchronize entries with the server",
-        variant: "destructive",
+        variant: "fail",
       });
     } finally {
       setSyncing(false);
@@ -235,7 +234,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Export failed",
         description: "No entries to export",
-        variant: "destructive",
+        variant: "fail",
       });
       return;
     }
