@@ -17,7 +17,8 @@ import {
   saveEntryToDB, 
   deleteEntryFromDB, 
   clearAllEntriesFromDB, 
-  initializeSync 
+  initializeSync,
+  addToDeletedEntries
 } from './syncStorage';
 
 // Generate a unique ID
@@ -120,6 +121,7 @@ export const updateEntry = async (updatedEntry: EntryData): Promise<void> => {
 
 // Delete an entry
 export const deleteEntry = async (id: string): Promise<void> => {
+  // This will also add to deleted entries list
   await deleteEntryFromDB(id);
 };
 

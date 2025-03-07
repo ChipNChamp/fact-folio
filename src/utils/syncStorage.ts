@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const SYNC_EVENT_KEY = 'knowledge-entries-sync';
 const LAST_SYNC_KEY = 'knowledge-entries-last-sync';
+const DELETED_ENTRIES_KEY = 'knowledge-entries-deleted';
 
 let db: IDBDatabase | null = null;
 
@@ -89,8 +90,28 @@ export const saveEntryToDB = async (entry: EntryData): Promise<void> => {
   }
 };
 
+// Track deleted entries to prevent resyncing them
+export const addToDeletedEntries = async (id: string): Promise<void> => {
+  const deletedEntriesStr = localStorage.getItem(DELETED_ENTRIES_KEY) || '[]';
+  const deletedEntries = JSON.parse(deletedEntriesStr);
+  
+  if (!deletedEntries.includes(id)) {
+    deletedEntries.push(id);
+    localStorage.setItem(DELETED_ENTRIES_KEY, JSON.stringify(deletedEntries));
+  }
+};
+
+export const getDeletedEntries = (): string[] => {
+  const deletedEntriesStr = localStorage.getItem(DELETED_ENTRIES_KEY) || '[]';
+  return JSON.parse(deletedEntriesStr);
+};
+
 export const deleteEntryFromDB = async (id: string): Promise<void> => {
   try {
+    // Add to deleted entries list
+    await addToDeletedEntries(id);
+    
+    // Delete from IndexedDB
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['entries'], 'readwrite');
@@ -153,6 +174,9 @@ const syncWithSupabase = async () => {
     // Fetch local entries
     const localEntries = await getAllEntriesFromDB();
     
+    // Get deleted entries list
+    const deletedEntryIds = getDeletedEntries();
+    
     // Get entries from Supabase that were updated since the last sync
     const { data: remoteEntries, error: fetchError } = await supabase
       .from('knowledge_entries')
@@ -169,6 +193,12 @@ const syncWithSupabase = async () => {
       console.log(`Found ${remoteEntries.length} entries to sync from Supabase`);
       
       for (const remoteEntry of remoteEntries) {
+        // Skip entries that are in the deleted list
+        if (deletedEntryIds.includes(remoteEntry.id)) {
+          console.log(`Skipping deleted entry: ${remoteEntry.id}`);
+          continue;
+        }
+        
         // Convert Supabase entry to local format
         const entry: EntryData = {
           id: remoteEntry.id,
@@ -202,6 +232,22 @@ const syncWithSupabase = async () => {
       
       if (upsertError) {
         console.error('Error upserting to Supabase:', upsertError);
+      }
+    }
+    
+    // Delete entries from Supabase that are in the deleted list
+    if (deletedEntryIds.length > 0) {
+      console.log(`Deleting ${deletedEntryIds.length} entries from Supabase`);
+      
+      const { error: deleteError } = await supabase
+        .from('knowledge_entries')
+        .delete()
+        .in('id', deletedEntryIds);
+      
+      if (deleteError) {
+        console.error('Error deleting entries from Supabase:', deleteError);
+      } else {
+        console.log('Deleted entries from Supabase successfully');
       }
     }
     

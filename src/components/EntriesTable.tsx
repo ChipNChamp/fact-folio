@@ -47,6 +47,10 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         title: "Entry deleted",
         description: "The entry has been removed",
       });
+      
+      // Trigger sync after deletion to ensure it's removed from Supabase as well
+      await manualSync();
+      
       if (onUpdate) onUpdate();
     } catch (error) {
       toast({
