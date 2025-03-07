@@ -2,10 +2,21 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { EntriesTable } from "@/components/EntriesTable";
-import { EntryType, getAllEntries, initializeStorage } from "@/utils/storage";
+import { EntryType, getAllEntries, initializeStorage, addEntry } from "@/utils/storage";
 import { Button } from "@/components/Button";
 import { useNavigate } from "react-router-dom";
 import { manualSync } from "@/utils/syncStorage";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const EntryTypes: { value: EntryType; label: string }[] = [
   { value: "vocabulary", label: "Vocabulary" },
@@ -21,7 +32,12 @@ const EntriesPage = () => {
   const [refreshFlag, setRefreshFlag] = useState(0);
   const [hasEntries, setHasEntries] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newEntryInput, setNewEntryInput] = useState("");
+  const [newEntryOutput, setNewEntryOutput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Initialize storage and sync
   useEffect(() => {
@@ -54,6 +70,53 @@ const EntriesPage = () => {
   const handleRefresh = () => {
     setRefreshFlag(prev => prev + 1);
   };
+
+  const handleAddEntry = async () => {
+    if (!selectedType) {
+      toast({
+        title: "Type required",
+        description: "Please select a category type first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!newEntryInput.trim() || !newEntryOutput.trim()) {
+      toast({
+        title: "Input required",
+        description: "Both input and output are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await addEntry(selectedType, newEntryInput, newEntryOutput);
+      
+      toast({
+        title: "Entry added",
+        description: "Your new entry has been saved",
+      });
+      
+      // Reset form and close dialog
+      setNewEntryInput("");
+      setNewEntryOutput("");
+      setIsAddDialogOpen(false);
+      
+      // Refresh the entries list
+      handleRefresh();
+    } catch (error) {
+      console.error("Error adding entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add entry",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
@@ -83,13 +146,26 @@ const EntriesPage = () => {
               ))}
             </div>
             
-            <Button 
-              onClick={() => navigate("/")}
-              variant="outline"
-              size="sm"
-            >
-              Add New
-            </Button>
+            <div className="flex gap-2">
+              {selectedType && (
+                <Button 
+                  onClick={() => setIsAddDialogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Entry
+                </Button>
+              )}
+              <Button 
+                onClick={() => navigate("/")}
+                variant="outline"
+                size="sm"
+              >
+                Add New
+              </Button>
+            </div>
           </div>
           
           <div className="border rounded-lg p-2 sm:p-4">
@@ -107,6 +183,62 @@ const EntriesPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Add Entry Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New {selectedType ? selectedType.charAt(0).toUpperCase() + selectedType.slice(1) : "Entry"}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="input" className="text-sm font-medium">Input</label>
+              <Input 
+                id="input"
+                value={newEntryInput}
+                onChange={(e) => setNewEntryInput(e.target.value)}
+                placeholder={selectedType === "vocabulary" ? "Enter word" : "Enter input"}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="output" className="text-sm font-medium">Output</label>
+              <Textarea 
+                id="output"
+                value={newEntryOutput}
+                onChange={(e) => setNewEntryOutput(e.target.value)}
+                placeholder="Enter output content"
+                className="w-full min-h-[120px]"
+                rows={4}
+              />
+              
+              {selectedType === "vocabulary" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Format as: brief definition, then numbered example sentences (1) and 2))
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddDialogOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddEntry}
+              disabled={isSubmitting || !newEntryInput.trim() || !newEntryOutput.trim()}
+            >
+              {isSubmitting ? "Adding..." : "Add Entry"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
