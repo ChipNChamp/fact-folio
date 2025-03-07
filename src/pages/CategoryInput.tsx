@@ -140,17 +140,21 @@ const CategoryInput = () => {
     setIsStoring(true);
     
     try {
-      const contentToSave = category === 'questions' 
-        ? `Question recorded: ${input}`
-        : category === 'business'
-        ? `Business fact recorded: ${input}`
-        : `Information recorded: ${input}`;
+      let contentToSave = '';
+      
+      if (category === 'questions') {
+        contentToSave = `Question recorded: ${input}\nContext: ${additionalInput || 'general'}`;
+      } else if (category === 'business') {
+        contentToSave = `Business fact recorded: ${input}\nApplies to: ${additionalInput || 'general business'}`;
+      } else {
+        contentToSave = `Information recorded: ${input}`;
+      }
       
       addEntry(
         category as EntryType,
         input,
         contentToSave,
-        additionalInput || undefined
+        undefined
       );
       
       toast({
@@ -190,7 +194,7 @@ const CategoryInput = () => {
         category as EntryType,
         input,
         generatedContent,
-        additionalInput || undefined
+        undefined
       );
       
       toast({

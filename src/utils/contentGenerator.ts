@@ -25,20 +25,20 @@ export const clearApiKey = (): void => {
 const generatePrompt = (type: ContentType, input: string, additionalInput?: string): string => {
   switch (type) {
     case 'vocabulary':
-      return `Provide an extremely brief definition of the word "${input}" (5-10 words max) followed by two short example sentences. Format as:
-Definition: [very concise definition, 5-10 words only]
+      return `Provide a very concise definition of the word "${input}" (5-10 words max) followed by two example sentences. Do NOT include the word "Definition:" at the beginning. Format as:
+[very concise definition, 5-10 words only]
 
-Example 1: [brief sentence using the word "${input}"]
+1) [sentence using the word "${input}" in clear context]
 
-Example 2: [brief sentence using the word "${input}"]
+2) [sentence using the word "${input}" in clear context, ideally showing a different form or usage]
 
-Keep all content extremely concise.`;
+If the word has multiple forms (e.g., Mature/Maturation) or has common negatives (e.g., Solvency/Insolvency), try to use different forms in each sentence. If the word has multiple contexts or slightly different meanings, show this difference between the sentences. Keep all content extremely concise.`;
     
     case 'phrases':
-      return `Briefly describe the phrase "${input}" and its typical usage. Be extremely concise. Format as:
-Description: [brief, direct description]
+      return `Provide a very concise explanation of the phrase "${input}" and how it's typically used. Do NOT include labels like "Description:" or "Usage:". Format as:
+[brief, direct explanation of meaning]
 
-Usage: [concise usage explanation]
+[concise usage explanation]
 
 Keep all content extremely concise. Fragment sentences are OK.`;
     
@@ -83,7 +83,7 @@ export const generateContent = async (type: ContentType, input: string, addition
         messages: [
           {
             role: 'system',
-            content: 'You are a concise assistant. Keep responses extremely brief and to the point. Fragment sentences are acceptable as long as they clearly convey meaning.'
+            content: 'You are a concise assistant. Keep responses extremely brief and to the point. Fragment sentences are acceptable as long as they clearly convey meaning. Do not use unnecessary labels like "Definition:" or unnecessary formatting.'
           },
           {
             role: 'user',
@@ -107,9 +107,11 @@ export const generateContent = async (type: ContentType, input: string, addition
     if (type === 'vocabulary') {
       const lines = content.split('\n');
       const processedLines = lines.map(line => {
-        if (line.startsWith('Example')) {
-          // Create a regex that matches the word with word boundaries
-          const wordRegex = new RegExp(`\\b${input}\\b`, 'gi');
+        if (line.startsWith('1)') || line.startsWith('2)')) {
+          // Create a regex that matches the word and its variations with word boundaries
+          // This will catch plurals, different forms, etc.
+          const wordBase = input.replace(/s$|ed$|ing$/, '');
+          const wordRegex = new RegExp(`\\b${wordBase}\\w*\\b`, 'gi');
           return line.replace(wordRegex, '_____');
         }
         return line;

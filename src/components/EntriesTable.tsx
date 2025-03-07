@@ -78,7 +78,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         ...entry,
         input: editInput,
         output: editOutput,
-        // Removing additionalInput field completely
+        // Remove additionalInput completely
         additionalInput: undefined
       };
       

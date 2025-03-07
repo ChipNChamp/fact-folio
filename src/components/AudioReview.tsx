@@ -55,43 +55,58 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     };
   }, [type]);
 
-  // Get the best available voice that sounds natural
+  // Get the best available American English voice
   const getBestVoice = () => {
     if (!speechSynthesisRef.current) return null;
     
     const voices = speechSynthesisRef.current.getVoices();
     
-    // Priority order for voice selection:
-    // 1. Look for premium voices (often contain keywords like premium, enhanced, neural)
-    const premiumVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes("premium") || 
-      voice.name.toLowerCase().includes("enhanced") ||
-      voice.name.toLowerCase().includes("neural") ||
-      voice.name.toLowerCase().includes("natural")
+    // First priority: American English premium voices
+    const americanVoiceKeywords = ['en-us', 'en_us', 'english-us', 'american'];
+    
+    // Look for premium American English voices
+    const premiumAmericanVoice = voices.find(voice => 
+      (voice.lang.toLowerCase().includes('en-us') || 
+       voice.lang.toLowerCase().includes('en_us') ||
+       voice.name.toLowerCase().includes('american')) && 
+      (voice.name.toLowerCase().includes('premium') ||
+       voice.name.toLowerCase().includes('enhanced') ||
+       voice.name.toLowerCase().includes('neural') ||
+       voice.name.toLowerCase().includes('natural'))
     );
     
-    if (premiumVoice) return premiumVoice;
+    if (premiumAmericanVoice) return premiumAmericanVoice;
     
-    // 2. Look for specific voice names known to be good
-    const preferredVoiceNames = [
-      "Google UK English Female", "Google UK English Male",
-      "Microsoft Zira", "Microsoft David", 
-      "Samantha", "Alex", "Daniel"
+    // Second priority: Specific American English voices known to be good
+    const preferredAmericanVoiceNames = [
+      "Google US English", "Google US English Female", "Google US English Male",
+      "Microsoft David", "Microsoft Mark", "Microsoft Guy", "Microsoft Zira",
+      "Alex", "Samantha"
     ];
     
-    for (const name of preferredVoiceNames) {
+    for (const name of preferredAmericanVoiceNames) {
       const voice = voices.find(v => v.name === name);
       if (voice) return voice;
     }
     
-    // 3. Fall back to any English voice
+    // Third priority: Any American English voice
+    const americanEnglishVoice = voices.find(voice => 
+      voice.lang.toLowerCase().includes('en-us') || 
+      voice.lang.toLowerCase().includes('en_us') ||
+      voice.name.toLowerCase().includes('american')
+    );
+    
+    if (americanEnglishVoice) return americanEnglishVoice;
+    
+    // Fourth priority: Any English voice
     const englishVoice = voices.find(voice => 
-      voice.lang.includes('en-') || voice.lang.includes('en_')
+      voice.lang.toLowerCase().includes('en-') || 
+      voice.lang.toLowerCase().includes('en_')
     );
     
     if (englishVoice) return englishVoice;
     
-    // 4. Last resort: use any available voice
+    // Last resort: use any available voice
     return voices[0] || null;
   };
 
@@ -113,16 +128,16 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     }
     
     // Enhance speech parameters for more natural sound
-    frontUtterance.rate = 0.95; // Slightly slower for clarity
-    frontUtterance.pitch = 1.05; // Slightly higher pitch for engagement
+    frontUtterance.rate = 0.98; // Slightly slower for clarity
+    frontUtterance.pitch = 1.02; // Very slight pitch adjustment for naturalness
     frontUtterance.volume = 1.0; // Full volume
     
     frontUtterance.onstart = () => setSpeaking(true);
     frontUtterance.onend = () => {
       // Pause between front and back
       timerRef.current = window.setTimeout(() => {
-        // Create answer text (no more additionalInput reference)
-        const answerText = `Answer: ${entry.input}`;
+        // Create answer text (directly use the input as the answer)
+        const answerText = entry.input;
         
         // Speak the back of the card (input/answer)
         const backUtterance = new SpeechSynthesisUtterance(answerText);
@@ -132,8 +147,8 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
         }
         
         // Match speech parameters
-        backUtterance.rate = 0.95;
-        backUtterance.pitch = 1.05;
+        backUtterance.rate = 0.98;
+        backUtterance.pitch = 1.02;
         backUtterance.volume = 1.0;
         
         backUtterance.onstart = () => setSpeaking(true);
