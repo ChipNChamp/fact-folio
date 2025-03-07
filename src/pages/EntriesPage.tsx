@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { EntriesTable } from "@/components/EntriesTable";
 import { EntryType, getAllEntries, initializeStorage, addEntry } from "@/utils/storage";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EntryTypes: { value: EntryType; label: string }[] = [
@@ -36,6 +36,10 @@ const EntriesPage = () => {
   const [newEntryInput, setNewEntryInput] = useState("");
   const [newEntryOutput, setNewEntryOutput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadType, setUploadType] = useState<EntryType>("vocabulary");
+  const [uploadStatus, setUploadStatus] = useState<{total: number, processed: number} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -117,6 +121,110 @@ const EntriesPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    
+    reader.onload = async (event) => {
+      try {
+        const csvData = event.target?.result as string;
+        const rows = csvData.split('\n');
+        
+        // Remove header row
+        rows.shift();
+        
+        // Filter out empty rows
+        const validRows = rows.filter(row => row.trim().length > 0);
+        setUploadStatus({ total: validRows.length, processed: 0 });
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 0; i < validRows.length; i++) {
+          try {
+            const row = validRows[i];
+            const columns = parseCSVRow(row);
+            
+            if (columns.length >= 2) {
+              const input = columns[0].trim();
+              const output = columns[1].trim();
+              
+              if (input && output) {
+                await addEntry(uploadType, input, output);
+                successCount++;
+              } else {
+                errorCount++;
+              }
+            } else {
+              errorCount++;
+            }
+            
+            setUploadStatus({ total: validRows.length, processed: i + 1 });
+          } catch (error) {
+            console.error("Error processing row:", error);
+            errorCount++;
+          }
+        }
+        
+        toast({
+          title: "CSV Upload Complete",
+          description: `Added ${successCount} entries. Failed ${errorCount} entries.`,
+        });
+        
+        setUploadStatus(null);
+        setIsUploadDialogOpen(false);
+        handleRefresh();
+        
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } catch (error) {
+        console.error("Error processing CSV:", error);
+        toast({
+          title: "Upload Failed",
+          description: "There was an error processing the CSV file.",
+          variant: "destructive",
+        });
+        setUploadStatus(null);
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+  
+  const parseCSVRow = (row: string): string[] => {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+    
+    for (let i = 0; i < row.length; i++) {
+      const char = row[i];
+      
+      if (char === '"') {
+        if (inQuotes && i < row.length - 1 && row[i + 1] === '"') {
+          // Double quotes inside quoted string -> escaped quote
+          current += '"';
+          i++;
+        } else {
+          // Toggle quote mode
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of column
+        result.push(current);
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current);
+    return result;
+  };
   
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
@@ -147,6 +255,15 @@ const EntriesPage = () => {
             </div>
             
             <div className="flex gap-2">
+              <Button 
+                onClick={() => setIsUploadDialogOpen(true)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Upload className="h-4 w-4" />
+                Upload CSV
+              </Button>
               {selectedType && (
                 <Button 
                   onClick={() => setIsAddDialogOpen(true)}
@@ -178,6 +295,7 @@ const EntriesPage = () => {
                 key={`${selectedType || 'all'}-${refreshFlag}`}
                 type={selectedType} 
                 onUpdate={handleRefresh}
+                hideSelectMode={true}
               />
             )}
           </div>
@@ -235,6 +353,76 @@ const EntriesPage = () => {
               disabled={isSubmitting || !newEntryInput.trim() || !newEntryOutput.trim()}
             >
               {isSubmitting ? "Adding..." : "Add Entry"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Upload Dialog */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload CSV</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="type" className="text-sm font-medium">Entry Type</label>
+              <select
+                id="type"
+                value={uploadType}
+                onChange={(e) => setUploadType(e.target.value as EntryType)}
+                className="w-full p-2 border rounded"
+              >
+                {EntryTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="csv" className="text-sm font-medium">CSV File</label>
+              <Input 
+                id="csv"
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                CSV format: First column = Input, Second column = Output. Include header row.
+              </p>
+            </div>
+            
+            {uploadStatus && (
+              <div className="space-y-2">
+                <div className="h-2 w-full bg-muted overflow-hidden rounded-full">
+                  <div 
+                    className="h-full bg-primary"
+                    style={{ width: `${(uploadStatus.processed / uploadStatus.total) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-center">
+                  Processing {uploadStatus.processed} of {uploadStatus.total} entries
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsUploadDialogOpen(false);
+                setUploadStatus(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                }
+              }}
+              disabled={!!uploadStatus}
+            >
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

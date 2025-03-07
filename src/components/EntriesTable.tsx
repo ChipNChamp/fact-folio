@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -26,9 +27,10 @@ import { Input } from "@/components/ui/input";
 interface EntriesTableProps {
   type?: EntryType;
   onUpdate?: () => void;
+  hideSelectMode?: boolean;
 }
 
-export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
+export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: EntriesTableProps) => {
   const { toast } = useToast();
   const [entries, setEntries] = useState<EntryData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -299,24 +301,26 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       <div className="sticky top-0 z-10 bg-background p-4 border-b border-border mb-4">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={selectMode ? "default" : "outline"} 
-              size="sm" 
-              onClick={() => setSelectMode(!selectMode)}
-              className="flex items-center gap-2"
-            >
-              {selectMode ? (
-                <>
-                  <XCircle className="h-4 w-4" />
-                  Cancel Selection
-                </>
-              ) : (
-                <>
-                  <CheckSquare className="h-4 w-4" />
-                  Select Mode
-                </>
-              )}
-            </Button>
+            {!hideSelectMode && (
+              <Button 
+                variant={selectMode ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setSelectMode(!selectMode)}
+                className="flex items-center gap-2"
+              >
+                {selectMode ? (
+                  <>
+                    <XCircle className="h-4 w-4" />
+                    Cancel Selection
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-4 w-4" />
+                    Select Mode
+                  </>
+                )}
+              </Button>
+            )}
             
             {selectMode && (
               <>
@@ -496,3 +500,4 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     </div>
   );
 };
+
