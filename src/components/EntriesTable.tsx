@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -22,6 +23,7 @@ import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
 import { manualSync } from "@/utils/syncStorage";
 import { Input } from "@/components/ui/input";
+import { addToDeletedEntries } from "@/utils/syncStorage";
 
 interface EntriesTableProps {
   type?: EntryType;
@@ -66,7 +68,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Delete failed",
         description: "Could not delete the entry. Please try again.",
-        variant: "destructive",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -85,18 +87,17 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
     try {
       setLoading(true);
       
-      const deletePromises = selectedEntries.map(id => deleteEntry(id));
-      await Promise.all(deletePromises);
+      // Instead of deleting locally right away, just mark them for deletion in Supabase
+      for (const id of selectedEntries) {
+        await addToDeletedEntries(id);
+      }
       
+      // Visual feedback - we'll still update the UI to hide these items
       setEntries(entries.filter(entry => !selectedEntries.includes(entry.id)));
       
-      await manualSync();
-      
-      await refreshEntries();
-      
       toast({
-        title: "Entries deleted",
-        description: `${selectedEntries.length} entries have been removed and synced`,
+        title: "Entries marked for deletion",
+        description: `${selectedEntries.length} entries have been marked for deletion. Click 'Sync Now' to complete the process.`,
       });
       
       setSelectedEntries([]);
@@ -104,11 +105,11 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       
       if (onUpdate) onUpdate();
     } catch (error) {
-      console.error("Error deleting entries:", error);
+      console.error("Error marking entries for deletion:", error);
       toast({
-        title: "Delete failed",
-        description: "Could not delete some entries. Please try again.",
-        variant: "destructive",
+        title: "Operation failed",
+        description: "Could not mark some entries for deletion. Please try again.",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -170,7 +171,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Update failed",
         description: "Could not update the entry",
-        variant: "destructive",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -189,7 +190,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Error",
         description: "Failed to load entries",
-        variant: "destructive",
+        variant: "fail",
       });
     } finally {
       setLoading(false);
@@ -203,14 +204,14 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       await refreshEntries();
       toast({
         title: "Sync complete",
-        description: "Entries have been synchronized",
+        description: "Entries have been synchronized with the server",
       });
     } catch (error) {
       console.error("Error syncing entries:", error);
       toast({
         title: "Sync failed",
-        description: "Could not synchronize entries",
-        variant: "destructive",
+        description: "Could not synchronize entries with the server",
+        variant: "fail",
       });
     } finally {
       setSyncing(false);
@@ -226,7 +227,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       toast({
         title: "Export failed",
         description: "No entries to export",
-        variant: "destructive",
+        variant: "fail",
       });
       return;
     }
@@ -336,14 +337,14 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         
         <div className="flex gap-2">
           <Button 
-            variant="outline" 
+            variant="default" 
             size="sm" 
             onClick={handleSync}
             disabled={syncing}
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? "Syncing..." : "Sync Now"}
+            {syncing ? "Syncing..." : "Sync with Server"}
           </Button>
           <Button 
             variant="outline" 

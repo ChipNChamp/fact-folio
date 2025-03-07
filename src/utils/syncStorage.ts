@@ -1,4 +1,3 @@
-
 import { EntryData, EntryType } from './storage';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -98,6 +97,7 @@ export const addToDeletedEntries = async (id: string): Promise<void> => {
   if (!deletedEntries.includes(id)) {
     deletedEntries.push(id);
     localStorage.setItem(DELETED_ENTRIES_KEY, JSON.stringify(deletedEntries));
+    console.log(`Added ID ${id} to deleted entries list`);
   }
 };
 
@@ -116,6 +116,7 @@ export const clearDeletedEntries = async (ids: string[]): Promise<void> => {
   deletedEntries = deletedEntries.filter((id: string) => !ids.includes(id));
   
   localStorage.setItem(DELETED_ENTRIES_KEY, JSON.stringify(deletedEntries));
+  console.log(`Cleared ${ids.length} IDs from deleted entries list`);
 };
 
 export const deleteEntryFromDB = async (id: string): Promise<void> => {
@@ -199,11 +200,10 @@ export const getEntriesByTypeFromDB = async (type: EntryType): Promise<EntryData
 const syncWithSupabase = async () => {
   console.log('Starting Supabase sync');
   try {
-    // Get deleted entries list first
+    // STEP 1: Process all deletions first and wait for them to complete
     const deletedEntryIds = getDeletedEntries();
     console.log('Currently deleted entry IDs:', deletedEntryIds);
     
-    // STEP 1: Process all deletions first and wait for them to complete
     if (deletedEntryIds.length > 0) {
       console.log(`Deleting ${deletedEntryIds.length} entries from Supabase`);
       
@@ -221,6 +221,16 @@ const syncWithSupabase = async () => {
         } else {
           console.log(`Entry ${id} deleted from Supabase successfully`);
           successfullyDeletedIds.push(id);
+          
+          // Also delete from local DB after successful server deletion
+          try {
+            const db = await openDatabase();
+            const transaction = db.transaction(['entries'], 'readwrite');
+            const store = transaction.objectStore('entries');
+            store.delete(id);
+          } catch (err) {
+            console.error(`Error removing deleted entry ${id} from local DB:`, err);
+          }
         }
       }
       
@@ -231,13 +241,13 @@ const syncWithSupabase = async () => {
       }
     }
     
-    // Get an updated list of deleted entries (after potential clearing)
-    const updatedDeletedEntryIds = getDeletedEntries();
-    
     // STEP 2: Get the last sync time AFTER deletions are processed
     const lastSyncTime = localStorage.getItem(LAST_SYNC_KEY) 
       ? parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0') 
       : 0;
+    
+    // Get an updated list of deleted entries (after potential clearing)
+    const updatedDeletedEntryIds = getDeletedEntries();
     
     // STEP 3: Now fetch local entries for uploading to Supabase
     const localEntries = await getAllEntriesFromDB();
@@ -268,7 +278,7 @@ const syncWithSupabase = async () => {
       }
     }
     
-    // STEP 4: Finally, after all deletions and uploads are processed, fetch from Supabase
+    // STEP 4: Finally, fetch from Supabase and update local DB
     // Get entries from Supabase that were updated since the last sync
     // but exclude the ones that we know were deleted
     const { data: remoteEntries, error: fetchError } = await supabase
