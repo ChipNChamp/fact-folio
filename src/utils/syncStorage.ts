@@ -1,4 +1,3 @@
-
 import { EntryData, EntryType } from './storage';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -106,10 +105,33 @@ export const getDeletedEntries = (): string[] => {
   return JSON.parse(deletedEntriesStr);
 };
 
+export const clearDeletedEntries = async (ids: string[]): Promise<void> => {
+  if (!ids || ids.length === 0) return;
+  
+  const deletedEntriesStr = localStorage.getItem(DELETED_ENTRIES_KEY) || '[]';
+  let deletedEntries = JSON.parse(deletedEntriesStr);
+  
+  // Remove the specified IDs from the deleted entries list
+  deletedEntries = deletedEntries.filter((id: string) => !ids.includes(id));
+  
+  localStorage.setItem(DELETED_ENTRIES_KEY, JSON.stringify(deletedEntries));
+};
+
 export const deleteEntryFromDB = async (id: string): Promise<void> => {
   try {
-    // Add to deleted entries list
-    await addToDeletedEntries(id);
+    // First delete from Supabase to ensure it's deleted server-side
+    const { error } = await supabase
+      .from('knowledge_entries')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting entry from Supabase:', error);
+      // If it fails, we'll add it to the deleted entries list to try again later
+      await addToDeletedEntries(id);
+    } else {
+      console.log(`Entry ${id} deleted from Supabase successfully`);
+    }
     
     // Delete from IndexedDB
     const db = await openDatabase();
@@ -123,15 +145,19 @@ export const deleteEntryFromDB = async (id: string): Promise<void> => {
       };
 
       request.onerror = (event) => {
-        console.error('Error deleting entry:', event);
+        console.error('Error deleting entry from IndexedDB:', event);
         reject('Error deleting entry');
       };
     });
   } catch (error) {
     console.error('Failed to delete entry:', error);
+    // Fallback to localStorage
     const entries = await getAllEntriesFromDB();
     const updatedEntries = entries.filter(e => e.id !== id);
     localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
+    
+    // Still track the deletion even if it failed
+    await addToDeletedEntries(id);
   }
 };
 
@@ -217,6 +243,12 @@ const syncWithSupabase = async () => {
     
     // Upload local entries to Supabase
     for (const localEntry of localEntries) {
+      // Skip entries that are in the deleted list
+      if (deletedEntryIds.includes(localEntry.id)) {
+        console.log(`Skipping deleted entry from upload: ${localEntry.id}`);
+        continue;
+      }
+      
       const { error: upsertError } = await supabase
         .from('knowledge_entries')
         .upsert({
@@ -239,7 +271,7 @@ const syncWithSupabase = async () => {
     if (deletedEntryIds.length > 0) {
       console.log(`Deleting ${deletedEntryIds.length} entries from Supabase`);
       
-      const { error: deleteError } = await supabase
+      const { error: deleteError, data: deleteData } = await supabase
         .from('knowledge_entries')
         .delete()
         .in('id', deletedEntryIds);
@@ -248,6 +280,8 @@ const syncWithSupabase = async () => {
         console.error('Error deleting entries from Supabase:', deleteError);
       } else {
         console.log('Deleted entries from Supabase successfully');
+        // Clear the successfully deleted entries from our tracking list
+        await clearDeletedEntries(deletedEntryIds);
       }
     }
     
@@ -339,4 +373,3 @@ const setupManualSync = () => {
   
   window.addEventListener('online', manualSync);
 };
-

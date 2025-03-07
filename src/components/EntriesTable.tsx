@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -43,19 +42,18 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       setLoading(true);
       await deleteEntry(id);
       setEntries(entries.filter(entry => entry.id !== id));
+      await manualSync();
       toast({
         title: "Entry deleted",
-        description: "The entry has been removed",
+        description: "The entry has been removed and synced",
       });
-      
-      // Trigger sync after deletion to ensure it's removed from Supabase as well
-      await manualSync();
       
       if (onUpdate) onUpdate();
     } catch (error) {
+      console.error("Error deleting entry:", error);
       toast({
         title: "Delete failed",
-        description: "Could not delete the entry",
+        description: "Could not delete the entry. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -82,7 +80,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         ...entry,
         input: editInput,
         output: editOutput,
-        // Remove additionalInput completely
         additionalInput: undefined
       };
       
@@ -139,6 +136,7 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
         description: "Entries have been synchronized",
       });
     } catch (error) {
+      console.error("Error syncing entries:", error);
       toast({
         title: "Sync failed",
         description: "Could not synchronize entries",
@@ -163,7 +161,6 @@ export const EntriesTable = ({ type, onUpdate }: EntriesTableProps) => {
       return;
     }
 
-    // Remove additional input from the headers
     const headers = ["Input", "Output", "Date", "Knowledge Level"];
     const rows = entries.map(entry => [
       `"${entry.input.replace(/"/g, '""')}"`,
