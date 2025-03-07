@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { PlayCircle, PauseCircle, SkipForward, SkipBack, Volume2 } from "lucide-react";
 import { Button } from "./Button";
-import { EntryData, getAllEntries } from "@/utils/storage";
+import { EntryData, getAllEntries, getEntriesByType, EntryType } from "@/utils/storage";
 
 interface AudioReviewProps {
   onClose: () => void;
@@ -24,7 +24,7 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
       try {
         let loadedEntries;
         if (type && type !== 'all') {
-          loadedEntries = await getAllEntries(type);
+          loadedEntries = await getEntriesByType(type as EntryType);
         } else {
           loadedEntries = await getAllEntries();
         }
