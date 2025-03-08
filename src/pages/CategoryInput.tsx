@@ -140,21 +140,21 @@ const CategoryInput = () => {
     setIsStoring(true);
     
     try {
-      let contentToSave = '';
+      let contentToSave: string | null = null;
       
       if (category === 'questions') {
-        contentToSave = `Question recorded: ${input}\nContext: ${additionalInput || 'general'}`;
+        contentToSave = additionalInput || null;
       } else if (category === 'business') {
-        contentToSave = `Business fact recorded: ${input}\nApplies to: ${additionalInput || 'general business'}`;
-      } else {
-        contentToSave = `Information recorded: ${input}`;
+        contentToSave = additionalInput || null;
+      } else if (category === 'other') {
+        contentToSave = null;
       }
       
       addEntry(
         category as EntryType,
         input,
         contentToSave,
-        undefined
+        additionalInput
       );
       
       toast({
@@ -178,10 +178,10 @@ const CategoryInput = () => {
   };
   
   const handleStore = () => {
-    if (!input.trim() || !generatedContent.trim()) {
+    if (!input.trim()) {
       toast({
         title: "Content required",
-        description: "Please generate content first",
+        description: "Please enter input first",
         variant: "destructive",
       });
       return;
@@ -194,7 +194,7 @@ const CategoryInput = () => {
         category as EntryType,
         input,
         generatedContent,
-        undefined
+        additionalInput
       );
       
       toast({

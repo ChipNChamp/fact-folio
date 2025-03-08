@@ -5,7 +5,7 @@ import { FlashCard } from "@/components/FlashCard";
 import { Button } from "@/components/Button";
 import { AudioReview } from "@/components/AudioReview";
 import { getEntriesForReview, getEntriesByType, EntryData, EntryType } from "@/utils/storage";
-import { RotateCcw, AlertCircle, Volume2 } from "lucide-react";
+import { RotateCcw, AlertCircle, Volume2, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Review = () => {
@@ -151,6 +151,30 @@ const Review = () => {
             canGoPrev={currentIndex > 0}
             className="animate-fade-in"
           />
+          
+          {/* Mobile navigation buttons */}
+          <div className="mt-6 grid grid-cols-2 gap-4 md:hidden">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handlePrev}
+              disabled={!reviewEntries.length || currentIndex === 0}
+              className="h-16 flex items-center justify-center"
+            >
+              <ArrowLeft className="h-6 w-6 mr-2" /> 
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleNext}
+              disabled={!reviewEntries.length || currentIndex === reviewEntries.length - 1}
+              className="h-16 flex items-center justify-center"
+            >
+              Next
+              <ArrowRight className="h-6 w-6 ml-2" /> 
+            </Button>
+          </div>
           
           <div className="mt-4 w-full flex justify-center">
             <Button
