@@ -5,7 +5,7 @@ import { FlashCard } from "@/components/FlashCard";
 import { Button } from "@/components/Button";
 import { AudioReview } from "@/components/AudioReview";
 import { getEntriesForReview, getEntriesByType, EntryData, EntryType } from "@/utils/storage";
-import { RotateCcw, AlertCircle, Volume2 } from "lucide-react";
+import { RotateCcw, AlertCircle, Volume2, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Review = () => {
@@ -143,6 +143,33 @@ const Review = () => {
             </Button>
           </div>
           
+          {/* Hide side arrows on mobile */}
+          <div className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 sm:-translate-x-16 z-10">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handlePrev} 
+              disabled={!reviewEntries.length || currentIndex <= 0}
+              className="h-12 w-12 sm:h-14 sm:w-14 opacity-70 hover:opacity-100 rounded-full bg-background/80"
+              aria-label="Previous card"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+          </div>
+          
+          <div className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 sm:translate-x-16 z-10">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleNext} 
+              disabled={!reviewEntries.length || currentIndex >= reviewEntries.length - 1}
+              className="h-12 w-12 sm:h-14 sm:w-14 opacity-70 hover:opacity-100 rounded-full bg-background/80"
+              aria-label="Next card"
+            >
+              <ArrowRight className="h-6 w-6" />
+            </Button>
+          </div>
+          
           <FlashCard
             entry={reviewEntries[currentIndex]}
             onNext={handleNext}
@@ -151,6 +178,31 @@ const Review = () => {
             canGoPrev={currentIndex > 0}
             className="animate-fade-in"
           />
+          
+          {/* Mobile navigation buttons below card */}
+          <div className="sm:hidden flex justify-between mt-6 gap-3 w-full">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handlePrev}
+              disabled={!reviewEntries.length || currentIndex <= 0}
+              className="flex-1 flex items-center justify-center"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" /> 
+              Previous
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleNext}
+              disabled={!reviewEntries.length || currentIndex >= reviewEntries.length - 1}
+              className="flex-1 flex items-center justify-center"
+            >
+              Next
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </div>
           
           <div className="mt-4 w-full flex justify-center">
             <Button

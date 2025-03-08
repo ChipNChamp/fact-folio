@@ -1,3 +1,4 @@
+
 import { useState, useEffect, KeyboardEvent, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
@@ -140,21 +141,14 @@ const CategoryInput = () => {
     setIsStoring(true);
     
     try {
-      let contentToSave = '';
-      
-      if (category === 'questions') {
-        contentToSave = `Question recorded: ${input}\nContext: ${additionalInput || 'general'}`;
-      } else if (category === 'business') {
-        contentToSave = `Business fact recorded: ${input}\nApplies to: ${additionalInput || 'general business'}`;
-      } else {
-        contentToSave = `Information recorded: ${input}`;
-      }
+      // For 'other', 'business', and 'questions', set output to null
+      const contentToSave = null; // Store null for these entry types
       
       addEntry(
         category as EntryType,
         input,
         contentToSave,
-        undefined
+        additionalInput || undefined
       );
       
       toast({
