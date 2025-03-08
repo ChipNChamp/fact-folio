@@ -141,8 +141,12 @@ const CategoryInput = () => {
     setIsStoring(true);
     
     try {
-      // For 'other', 'business', and 'questions', set output to null
-      const contentToSave = null; // Store null for these entry types
+      // Only set output to null for 'other' type
+      let contentToSave = null;
+      
+      // For business and questions, we'll leave contentToSave as null
+      // but could potentially set it from input or generated content in the future
+      // Right now, we ensure it's saved as null for "other" type
       
       addEntry(
         category as EntryType,
