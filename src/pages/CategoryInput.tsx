@@ -1,4 +1,3 @@
-
 import { useState, useEffect, KeyboardEvent, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
@@ -141,18 +140,21 @@ const CategoryInput = () => {
     setIsStoring(true);
     
     try {
-      // Only set output to null for 'other' type
-      let contentToSave = null;
+      let contentToSave = '';
       
-      // For business and questions, we'll leave contentToSave as null
-      // but could potentially set it from input or generated content in the future
-      // Right now, we ensure it's saved as null for "other" type
+      if (category === 'questions') {
+        contentToSave = `Question recorded: ${input}\nContext: ${additionalInput || 'general'}`;
+      } else if (category === 'business') {
+        contentToSave = `Business fact recorded: ${input}\nApplies to: ${additionalInput || 'general business'}`;
+      } else {
+        contentToSave = `Information recorded: ${input}`;
+      }
       
       addEntry(
         category as EntryType,
         input,
         contentToSave,
-        additionalInput || undefined
+        undefined
       );
       
       toast({
