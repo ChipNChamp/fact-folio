@@ -16,5 +16,9 @@ export const supabase = createClient<Database>(
         'x-app-version': '1.0.0',
       },
     },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
   }
 );

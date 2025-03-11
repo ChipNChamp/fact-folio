@@ -3,9 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Header } from "@/components/Header";
 import { ApiKeyInput } from "@/components/ApiKeyInput";
-import { EntryType, addEntry } from "@/utils/storage";
+import { EntryType, addEntry, checkForDuplicate } from "@/utils/storage";
 import { ContentType, generateContent, getApiKey } from "@/utils/contentGenerator";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const CategoryInput = () => {
@@ -19,6 +19,8 @@ const CategoryInput = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isStoring, setIsStoring] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [duplicateItem, setDuplicateItem] = useState<any>(null);
   
   const mainInputRef = useRef<HTMLInputElement>(null);
   const additionalInputRef = useRef<HTMLInputElement>(null);
@@ -36,6 +38,22 @@ const CategoryInput = () => {
       }
     }, 100);
   }, [category]);
+  
+  useEffect(() => {
+    const checkDuplicate = async () => {
+      if (input.trim().length < 2) {
+        setIsDuplicate(false);
+        setDuplicateItem(null);
+        return;
+      }
+      
+      const duplicate = await checkForDuplicate(category as EntryType, input);
+      setIsDuplicate(!!duplicate);
+      setDuplicateItem(duplicate);
+    };
+    
+    checkDuplicate();
+  }, [input, category]);
   
   const needsGeneration = (): boolean => {
     return !['questions', 'business', 'other'].includes(category || '');
@@ -137,6 +155,14 @@ const CategoryInput = () => {
       return;
     }
     
+    if (isDuplicate) {
+      toast({
+        title: "Duplicate detected",
+        description: "This entry already exists. Saving will create a duplicate.",
+        variant: "warning",
+      });
+    }
+    
     setIsStoring(true);
     
     try {
@@ -185,6 +211,14 @@ const CategoryInput = () => {
         variant: "destructive",
       });
       return;
+    }
+    
+    if (isDuplicate) {
+      toast({
+        title: "Duplicate detected",
+        description: "This entry already exists. Saving will create a duplicate.",
+        variant: "warning",
+      });
     }
     
     setIsStoring(true);
@@ -274,16 +308,28 @@ const CategoryInput = () => {
             <label htmlFor="main-input" className="text-sm font-medium">
               {getInputLabel()}
             </label>
-            <input
-              id="main-input"
-              ref={mainInputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={getInputPlaceholder()}
-              className="w-full px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
-            />
+            <div className="relative">
+              <input
+                id="main-input"
+                ref={mainInputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={getInputPlaceholder()}
+                className={`w-full px-4 py-3 rounded-lg border ${isDuplicate ? 'border-orange-500 pr-10' : 'border-input'} bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200`}
+              />
+              {isDuplicate && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-500">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+              )}
+            </div>
+            {isDuplicate && (
+              <div className="text-sm text-orange-500 mt-1 animate-fade-in">
+                Duplicate detected: This {getInputLabel().toLowerCase()} already exists
+              </div>
+            )}
           </div>
           
           {getAdditionalInputPlaceholder() && (
@@ -396,3 +442,4 @@ const CategoryInput = () => {
 };
 
 export default CategoryInput;
+

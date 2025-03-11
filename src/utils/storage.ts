@@ -1,4 +1,3 @@
-
 export type EntryType = 'vocabulary' | 'phrases' | 'definitions' | 'questions' | 'business' | 'other';
 
 export interface EntryData {
@@ -44,6 +43,21 @@ export const getEntriesByType = async (type: EntryType): Promise<EntryData[]> =>
   
   // Filter out any entries that are marked as deleted
   return entries.filter(entry => !entry.deleted);
+};
+
+// Check if an entry with the same input already exists (for duplicate detection)
+export const checkForDuplicate = async (
+  type: EntryType,
+  input: string
+): Promise<EntryData | null> => {
+  const entries = await getEntriesByType(type);
+  
+  // Find an entry with the same input (case insensitive comparison)
+  const duplicate = entries.find(
+    entry => entry.input.toLowerCase() === input.toLowerCase()
+  );
+  
+  return duplicate || null;
 };
 
 // Add a new entry
