@@ -7,6 +7,8 @@ import { EntryType, addEntry, checkForDuplicate } from "@/utils/storage";
 import { ContentType, generateContent, getApiKey } from "@/utils/contentGenerator";
 import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 const CategoryInput = () => {
   const { category } = useParams<{ category: string }>();
@@ -15,6 +17,7 @@ const CategoryInput = () => {
   
   const [input, setInput] = useState("");
   const [additionalInput, setAdditionalInput] = useState("");
+  const [manualOutput, setManualOutput] = useState("");
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isStoring, setIsStoring] = useState(false);
@@ -25,6 +28,7 @@ const CategoryInput = () => {
   const mainInputRef = useRef<HTMLInputElement>(null);
   const additionalInputRef = useRef<HTMLInputElement>(null);
   const generateButtonRef = useRef<HTMLButtonElement>(null);
+  const manualOutputRef = useRef<HTMLTextAreaElement>(null);
   
   useEffect(() => {
     if (needsGeneration()) {
@@ -57,6 +61,10 @@ const CategoryInput = () => {
   
   const needsGeneration = (): boolean => {
     return !['questions', 'business', 'other'].includes(category || '');
+  };
+  
+  const needsManualOutput = (): boolean => {
+    return ['questions', 'business', 'other'].includes(category || '');
   };
   
   const getCategoryTitle = (): string => {
@@ -100,6 +108,18 @@ const CategoryInput = () => {
       case "business": return "Business Fact";
       case "other": return "Information";
       default: return "Input";
+    }
+  };
+  
+  const getOutputLabel = (): string => {
+    switch (category) {
+      case "vocabulary": return "Definition";
+      case "phrases": return "Explanation";
+      case "definitions": return "Definition";
+      case "questions": return "Answer";
+      case "business": return "Details";
+      case "other": return "Additional Information";
+      default: return "Output";
     }
   };
   
@@ -166,20 +186,10 @@ const CategoryInput = () => {
     setIsStoring(true);
     
     try {
-      let contentToSave: string | null = null;
-      
-      if (category === 'questions') {
-        contentToSave = additionalInput || null;
-      } else if (category === 'business') {
-        contentToSave = additionalInput || null;
-      } else if (category === 'other') {
-        contentToSave = null;
-      }
-      
       addEntry(
         category as EntryType,
         input,
-        contentToSave,
+        manualOutput,
         additionalInput
       );
       
@@ -190,8 +200,15 @@ const CategoryInput = () => {
       
       setInput("");
       setAdditionalInput("");
+      setManualOutput("");
       setGeneratedContent("");
       setIsStoring(false);
+      
+      setTimeout(() => {
+        if (mainInputRef.current) {
+          mainInputRef.current.focus();
+        }
+      }, 100);
     } catch (error) {
       console.error("Error storing entry:", error);
       toast({
@@ -309,7 +326,7 @@ const CategoryInput = () => {
               {getInputLabel()}
             </label>
             <div className="relative">
-              <input
+              <Input
                 id="main-input"
                 ref={mainInputRef}
                 type="text"
@@ -317,7 +334,7 @@ const CategoryInput = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={getInputPlaceholder()}
-                className={`w-full px-4 py-3 rounded-lg border ${isDuplicate ? 'border-orange-500 pr-10' : 'border-input'} bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200`}
+                className={`w-full px-4 py-3 rounded-lg ${isDuplicate ? 'border-orange-500 pr-10' : 'border-input'} bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200`}
               />
               {isDuplicate && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-500">
@@ -337,7 +354,7 @@ const CategoryInput = () => {
               <label htmlFor="additional-input" className="text-sm font-medium">
                 Applicability
               </label>
-              <input
+              <Input
                 id="additional-input"
                 ref={additionalInputRef}
                 type="text"
@@ -346,6 +363,22 @@ const CategoryInput = () => {
                 onKeyDown={handleKeyDown}
                 placeholder={getAdditionalInputPlaceholder() || ""}
                 className="w-full px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
+              />
+            </div>
+          )}
+          
+          {needsManualOutput() && (
+            <div className="space-y-2">
+              <label htmlFor="manual-output" className="text-sm font-medium">
+                {getOutputLabel()} (Optional)
+              </label>
+              <Textarea
+                id="manual-output"
+                ref={manualOutputRef}
+                value={manualOutput}
+                onChange={(e) => setManualOutput(e.target.value)}
+                placeholder={`Enter ${getOutputLabel().toLowerCase()} (optional)`}
+                className="w-full min-h-[120px] px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
               />
             </div>
           )}
@@ -442,4 +475,3 @@ const CategoryInput = () => {
 };
 
 export default CategoryInput;
-
