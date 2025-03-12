@@ -13,32 +13,41 @@ export type Database = {
         Row: {
           additional_input: string | null
           created_at: number
+          deleted_at: number | null
           id: string
           input: string
           knowledge: number
           last_synced_at: number
           output: string
+          purge_after: number | null
           type: string
+          version: number
         }
         Insert: {
           additional_input?: string | null
           created_at: number
+          deleted_at?: number | null
           id: string
           input: string
           knowledge?: number
           last_synced_at?: number
           output: string
+          purge_after?: number | null
           type: string
+          version?: number
         }
         Update: {
           additional_input?: string | null
           created_at?: number
+          deleted_at?: number | null
           id?: string
           input?: string
           knowledge?: number
           last_synced_at?: number
           output?: string
+          purge_after?: number | null
           type?: string
+          version?: number
         }
         Relationships: []
       }
@@ -47,7 +56,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      purge_old_deleted_entries: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

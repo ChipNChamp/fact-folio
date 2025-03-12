@@ -7,9 +7,11 @@ export interface EntryData {
   output: string;
   additionalInput?: string;
   createdAt: number;
-  knowledge: number; // 0 = fail, 1 = eh, 2 = pass, -1 = not reviewed
-  deleted?: boolean; // New flag to mark entries as deleted
-  deletedAt?: number; // Timestamp when the entry was deleted
+  knowledge: number;
+  version?: number;
+  deleted?: boolean;
+  deletedAt?: number;
+  purgeAfter?: number;
 }
 
 import { 
@@ -74,7 +76,11 @@ export const addEntry = async (
     output,
     additionalInput,
     createdAt: Date.now(),
-    knowledge: -1 // Not reviewed yet
+    knowledge: -1,
+    version: 1,
+    deleted: false,
+    deletedAt: null,
+    purgeAfter: null
   };
   
   await saveEntryToDB(newEntry);

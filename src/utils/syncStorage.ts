@@ -96,6 +96,160 @@ export const saveEntryToDB = async (entry: EntryData): Promise<void> => {
   }
 };
 
+export const markEntryAsDeleted = async (id: string): Promise<void> => {
+  try {
+    const db = await openDatabase();
+    const transaction = db.transaction(['entries'], 'readwrite');
+    const store = transaction.objectStore('entries');
+    const getRequest = store.get(id);
+    
+    getRequest.onsuccess = () => {
+      const entry = getRequest.result;
+      if (entry) {
+        const now = Date.now();
+        entry.deleted = true;
+        entry.deletedAt = now;
+        // Set purge_after to 30 days from now
+        entry.purgeAfter = now + (30 * 24 * 60 * 60 * 1000);
+        
+        store.put(entry);
+        console.log(`Marked entry ${id} as deleted with timestamp ${entry.deletedAt}`);
+      }
+    };
+    
+    return new Promise((resolve) => {
+      transaction.oncomplete = () => {
+        resolve();
+      };
+    });
+  } catch (error) {
+    console.error('Failed to mark entry as deleted:', error);
+    
+    const entries = await getAllEntriesFromDB();
+    const updatedEntries = entries.map(e => {
+      if (e.id === id) {
+        const now = Date.now();
+        return {
+          ...e, 
+          deleted: true, 
+          deletedAt: now,
+          purgeAfter: now + (30 * 24 * 60 * 60 * 1000)
+        };
+      }
+      return e;
+    });
+    
+    localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
+  }
+};
+
+const syncWithSupabase = async () => {
+  console.log('Starting Supabase sync');
+  try {
+    const localEntries = await getAllEntriesFromDB();
+    const lastSyncTime = localStorage.getItem(LAST_SYNC_KEY) 
+      ? parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0') 
+      : 0;
+    
+    console.log(`Fetching entries from Supabase updated since ${new Date(lastSyncTime).toISOString()}`);
+    
+    // Fetch all entries that have been updated since last sync
+    const { data: remoteEntries, error: fetchError } = await supabase
+      .from('knowledge_entries')
+      .select('*')
+      .gt('last_synced_at', lastSyncTime);
+    
+    if (fetchError) {
+      console.error('Error fetching from Supabase:', fetchError);
+      return;
+    }
+    
+    if (remoteEntries && remoteEntries.length > 0) {
+      console.log(`Found ${remoteEntries.length} entries to sync from Supabase`);
+      
+      for (const remoteEntry of remoteEntries) {
+        const localEntry = localEntries.find(e => e.id === remoteEntry.id);
+        
+        // If remote entry is newer version or we don't have it locally
+        if (!localEntry || (localEntry && remoteEntry.version > (localEntry.version || 1))) {
+          if (remoteEntry.deleted_at) {
+            // Handle deleted entry
+            await markEntryAsDeleted(remoteEntry.id);
+          } else {
+            // Handle active entry
+            const entry: EntryData = {
+              id: remoteEntry.id,
+              type: remoteEntry.type as EntryType,
+              input: remoteEntry.input,
+              output: remoteEntry.output,
+              additionalInput: remoteEntry.additional_input || undefined,
+              createdAt: remoteEntry.created_at,
+              knowledge: remoteEntry.knowledge,
+              version: remoteEntry.version,
+              deleted: false,
+              deletedAt: undefined,
+              purgeAfter: undefined
+            };
+            
+            await saveEntryToDB(entry);
+          }
+        }
+      }
+    }
+    
+    // Sync local changes to Supabase
+    for (const localEntry of localEntries) {
+      if (localEntry.deleted && localEntry.deletedAt && localEntry.deletedAt > lastSyncTime) {
+        // Sync deleted entry
+        const { error: upsertError } = await supabase
+          .from('knowledge_entries')
+          .upsert({
+            id: localEntry.id,
+            type: localEntry.type,
+            input: localEntry.input,
+            output: localEntry.output,
+            additional_input: localEntry.additionalInput,
+            created_at: localEntry.createdAt,
+            version: localEntry.version || 1,
+            deleted_at: localEntry.deletedAt,
+            purge_after: localEntry.purgeAfter,
+            last_synced_at: Date.now()
+          });
+        
+        if (upsertError) {
+          console.error(`Error syncing deleted entry ${localEntry.id}:`, upsertError);
+        }
+      } else if (!localEntry.deleted) {
+        // Sync active entry
+        const { error: upsertError } = await supabase
+          .from('knowledge_entries')
+          .upsert({
+            id: localEntry.id,
+            type: localEntry.type,
+            input: localEntry.input,
+            output: localEntry.output,
+            additional_input: localEntry.additionalInput,
+            created_at: localEntry.createdAt,
+            knowledge: localEntry.knowledge,
+            version: localEntry.version || 1,
+            deleted_at: null,
+            purge_after: null,
+            last_synced_at: Date.now()
+          });
+        
+        if (upsertError) {
+          console.error('Error upserting to Supabase:', upsertError);
+        }
+      }
+    }
+    
+    localStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
+    console.log('Supabase sync completed successfully');
+  } catch (error) {
+    console.error('Supabase sync failed:', error);
+  }
+};
+
 export const addToDeletedEntries = async (id: string): Promise<void> => {
   const deletedEntriesStr = localStorage.getItem(DELETED_ENTRIES_KEY) || '[]';
   const deletedEntries = JSON.parse(deletedEntriesStr);
@@ -146,51 +300,6 @@ export const clearDeletedEntries = async (ids: string[]): Promise<void> => {
   console.log(`Cleared ${ids.length} IDs from deleted entries list`);
 };
 
-export const markEntryAsDeleted = async (id: string): Promise<void> => {
-  try {
-    const db = await openDatabase();
-    const transaction = db.transaction(['entries'], 'readwrite');
-    const store = transaction.objectStore('entries');
-    const getRequest = store.get(id);
-    
-    getRequest.onsuccess = () => {
-      const entry = getRequest.result;
-      if (entry) {
-        entry.deleted = true;
-        entry.deletedAt = Date.now();
-        
-        store.put(entry);
-        console.log(`Marked entry ${id} as deleted with timestamp ${entry.deletedAt}`);
-      }
-    };
-    
-    getRequest.onerror = (event) => {
-      console.error('Error getting entry for deletion marking:', event);
-    };
-    
-    return new Promise((resolve) => {
-      transaction.oncomplete = () => {
-        resolve();
-      };
-    });
-  } catch (error) {
-    console.error('Failed to mark entry as deleted:', error);
-    
-    const entries = localStorage.getItem('knowledge-entries');
-    if (entries) {
-      const parsedEntries = JSON.parse(entries);
-      const updatedEntries = parsedEntries.map((e: EntryData) => {
-        if (e.id === id) {
-          return {...e, deleted: true, deletedAt: Date.now()};
-        }
-        return e;
-      });
-      
-      localStorage.setItem('knowledge-entries', JSON.stringify(updatedEntries));
-    }
-  }
-};
-
 export const deleteEntryFromDB = async (id: string): Promise<void> => {
   try {
     console.log(`Attempting to delete entry with ID: ${id} from local and mark for Supabase deletion`);
@@ -239,175 +348,6 @@ export const clearAllEntriesFromDB = async (): Promise<void> => {
 export const getEntriesByTypeFromDB = async (type: EntryType): Promise<EntryData[]> => {
   const allEntries = await getAllEntriesFromDB();
   return allEntries.filter(entry => entry.type === type);
-};
-
-const syncWithSupabase = async () => {
-  console.log('Starting Supabase sync');
-  try {
-    const localEntries = await getAllEntriesFromDB();
-    const locallyDeletedEntries = localEntries.filter(entry => entry.deleted);
-    
-    console.log(`Found ${locallyDeletedEntries.length} locally deleted entries to sync to Supabase`);
-    
-    for (const deletedEntry of locallyDeletedEntries) {
-      const { error: upsertError } = await supabase
-        .from('knowledge_entries')
-        .upsert({
-          id: deletedEntry.id,
-          type: deletedEntry.type,
-          input: deletedEntry.input,
-          output: deletedEntry.output,
-          additional_input: deletedEntry.additionalInput,
-          created_at: deletedEntry.createdAt,
-          knowledge: -999,
-          last_synced_at: deletedEntry.deletedAt || Date.now()
-        });
-      
-      if (upsertError) {
-        console.error(`Error marking entry ${deletedEntry.id} as deleted in Supabase:`, upsertError);
-      } else {
-        console.log(`Entry ${deletedEntry.id} marked as deleted in Supabase with timestamp ${deletedEntry.deletedAt}`);
-      }
-    }
-    
-    const deletedEntryIds = getDeletedEntries();
-    console.log('Currently deleted entry IDs from legacy list:', deletedEntryIds);
-    
-    if (deletedEntryIds.length > 0) {
-      console.log(`Processing ${deletedEntryIds.length} entries from legacy deletion list`);
-      
-      const successfullyDeletedIds = [];
-      
-      for (const id of deletedEntryIds) {
-        if (locallyDeletedEntries.some(entry => entry.id === id)) {
-          successfullyDeletedIds.push(id);
-          continue;
-        }
-        
-        const timestamp = getDeletedEntryTimestamp(id);
-        
-        const { error: upsertError } = await supabase
-          .from('knowledge_entries')
-          .upsert({
-            id: id,
-            type: 'deleted',
-            input: 'DELETED', 
-            output: 'DELETED',
-            created_at: 0,
-            knowledge: -999,
-            last_synced_at: timestamp
-          });
-        
-        if (upsertError) {
-          console.error(`Error marking entry ${id} as deleted in Supabase:`, upsertError);
-        } else {
-          console.log(`Entry ${id} marked as deleted in Supabase with timestamp ${timestamp}`);
-          successfullyDeletedIds.push(id);
-        }
-      }
-      
-      if (successfullyDeletedIds.length > 0) {
-        await clearDeletedEntries(successfullyDeletedIds);
-        console.log('Cleared successfully deleted entries from legacy tracking list');
-      }
-    }
-    
-    const nonDeletedLocalEntries = localEntries.filter(entry => !entry.deleted);
-    console.log(`Found ${nonDeletedLocalEntries.length} non-deleted local entries to consider for upload`);
-    
-    for (const localEntry of nonDeletedLocalEntries) {
-      const { error: upsertError } = await supabase
-        .from('knowledge_entries')
-        .upsert({
-          id: localEntry.id,
-          type: localEntry.type,
-          input: localEntry.input,
-          output: localEntry.output,
-          additional_input: localEntry.additionalInput,
-          created_at: localEntry.createdAt,
-          knowledge: localEntry.knowledge,
-          last_synced_at: Date.now()
-        });
-      
-      if (upsertError) {
-        console.error('Error upserting to Supabase:', upsertError);
-      }
-    }
-    
-    const lastSyncTime = localStorage.getItem(LAST_SYNC_KEY) 
-      ? parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0') 
-      : 0;
-    
-    console.log(`Fetching entries from Supabase updated since ${new Date(lastSyncTime).toISOString()}`);
-    const { data: remoteEntries, error: fetchError } = await supabase
-      .from('knowledge_entries')
-      .select('*')
-      .gt('last_synced_at', lastSyncTime);
-    
-    if (fetchError) {
-      console.error('Error fetching from Supabase:', fetchError);
-      return;
-    }
-    
-    if (remoteEntries && remoteEntries.length > 0) {
-      console.log(`Found ${remoteEntries.length} entries to sync from Supabase`);
-      
-      const remotelyDeletedEntries = remoteEntries.filter(entry => entry.knowledge === -999);
-      
-      console.log(`Found ${remotelyDeletedEntries.length} remotely deleted entries`);
-      
-      for (const deletedEntry of remotelyDeletedEntries) {
-        try {
-          const db = await openDatabase();
-          const transaction = db.transaction(['entries'], 'readwrite');
-          const store = transaction.objectStore('entries');
-          
-          const getRequest = store.get(deletedEntry.id);
-          
-          getRequest.onsuccess = () => {
-            const existingEntry = getRequest.result;
-            if (existingEntry) {
-              existingEntry.deleted = true;
-              existingEntry.deletedAt = deletedEntry.last_synced_at;
-              store.put(existingEntry);
-              console.log(`Marked entry ${deletedEntry.id} as deleted locally with timestamp ${deletedEntry.last_synced_at}`);
-            }
-          };
-        } catch (err) {
-          console.error(`Error marking entry ${deletedEntry.id} as deleted locally:`, err);
-        }
-      }
-      
-      for (const remoteEntry of remoteEntries) {
-        if (remoteEntry.knowledge === -999) {
-          continue;
-        }
-        
-        const entry: EntryData = {
-          id: remoteEntry.id,
-          type: remoteEntry.type as EntryType,
-          input: remoteEntry.input,
-          output: remoteEntry.output,
-          additionalInput: remoteEntry.additional_input || undefined,
-          createdAt: remoteEntry.created_at,
-          knowledge: remoteEntry.knowledge
-        };
-        
-        const localVersion = localEntries.find(e => e.id === entry.id);
-        
-        if (!localVersion || 
-            !localVersion.deleted || 
-            (localVersion.deleted && localVersion.deletedAt && remoteEntry.last_synced_at > localVersion.deletedAt)) {
-          await saveEntryToDB(entry);
-        }
-      }
-    }
-    
-    localStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
-    console.log('Supabase sync completed successfully');
-  } catch (error) {
-    console.error('Supabase sync failed:', error);
-  }
 };
 
 const supportsBackgroundSync = () => {
