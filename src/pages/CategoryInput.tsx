@@ -92,11 +92,7 @@ const CategoryInput = () => {
   };
   
   const getAdditionalInputPlaceholder = (): string | null => {
-    switch (category) {
-      case "questions": return "Enter applicability (where would this be used)";
-      case "business": return "Enter applicability (where would this be used)";
-      default: return null;
-    }
+    return null;
   };
   
   const getInputLabel = (): string => {
@@ -348,24 +344,6 @@ const CategoryInput = () => {
               </div>
             )}
           </div>
-          
-          {getAdditionalInputPlaceholder() && (
-            <div className="space-y-2">
-              <label htmlFor="additional-input" className="text-sm font-medium">
-                Applicability
-              </label>
-              <Input
-                id="additional-input"
-                ref={additionalInputRef}
-                type="text"
-                value={additionalInput}
-                onChange={(e) => setAdditionalInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={getAdditionalInputPlaceholder() || ""}
-                className="w-full px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
-              />
-            </div>
-          )}
           
           {needsManualOutput() && (
             <div className="space-y-2">
