@@ -17,6 +17,7 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
   const [speaking, setSpeaking] = useState(false);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const timerRef = useRef<number | null>(null);
+  const currentlyPlayingIndexRef = useRef<number>(0);
 
   // Load entries
   useEffect(() => {
@@ -62,9 +63,6 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     const voices = speechSynthesisRef.current.getVoices();
     
     // First priority: American English premium voices
-    const americanVoiceKeywords = ['en-us', 'en_us', 'english-us', 'american'];
-    
-    // Look for premium American English voices
     const premiumAmericanVoice = voices.find(voice => 
       (voice.lang.toLowerCase().includes('en-us') || 
        voice.lang.toLowerCase().includes('en_us') ||
@@ -110,14 +108,30 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     return voices[0] || null;
   };
 
+  // Stop all ongoing speech and timers
+  const stopAllSpeech = () => {
+    if (speechSynthesisRef.current) {
+      speechSynthesisRef.current.cancel();
+    }
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setSpeaking(false);
+  };
+
   // Play the current entry
   const playCurrentEntry = () => {
     if (!entries.length || !speechSynthesisRef.current) return;
     
-    const entry = entries[currentIndex];
+    // Make sure we use the latest index
+    const index = currentIndex;
+    currentlyPlayingIndexRef.current = index;
+    
+    const entry = entries[index];
     
     // Stop any ongoing speech
-    speechSynthesisRef.current.cancel();
+    stopAllSpeech();
     
     // Speak the front of the card (output)
     const frontUtterance = new SpeechSynthesisUtterance(entry.output);
@@ -127,15 +141,31 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
       frontUtterance.voice = bestVoice;
     }
     
-    // Enhance speech parameters for more natural sound
-    frontUtterance.rate = 0.98; // Slightly slower for clarity
-    frontUtterance.pitch = 1.02; // Very slight pitch adjustment for naturalness
+    // Enhance speech parameters for higher quality sound
+    frontUtterance.rate = 0.95; // Slightly slower for better clarity
+    frontUtterance.pitch = 1.0; // Natural pitch
     frontUtterance.volume = 1.0; // Full volume
+    
+    // Set higher quality settings if available
+    if ('sampleRate' in frontUtterance) {
+      // @ts-ignore - SampleRate may not be in all browsers
+      frontUtterance.sampleRate = 44100; // CD quality
+    }
     
     frontUtterance.onstart = () => setSpeaking(true);
     frontUtterance.onend = () => {
+      // Only proceed if we're still playing the same card
+      if (currentlyPlayingIndexRef.current !== index) {
+        return;
+      }
+      
       // Pause between front and back
       timerRef.current = window.setTimeout(() => {
+        // Only proceed if we're still playing the same card
+        if (currentlyPlayingIndexRef.current !== index) {
+          return;
+        }
+        
         // Create answer text (directly use the input as the answer)
         const answerText = entry.input;
         
@@ -147,19 +177,35 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
         }
         
         // Match speech parameters
-        backUtterance.rate = 0.98;
-        backUtterance.pitch = 1.02;
+        backUtterance.rate = 0.95;
+        backUtterance.pitch = 1.0;
         backUtterance.volume = 1.0;
+        
+        // Set higher quality settings if available
+        if ('sampleRate' in backUtterance) {
+          // @ts-ignore - SampleRate may not be in all browsers
+          backUtterance.sampleRate = 44100; // CD quality
+        }
         
         backUtterance.onstart = () => setSpeaking(true);
         backUtterance.onend = () => {
+          // Only proceed if we're still playing the same card
+          if (currentlyPlayingIndexRef.current !== index) {
+            return;
+          }
+          
           setSpeaking(false);
           
           // Move to next card after a pause if still playing
           timerRef.current = window.setTimeout(() => {
-            if (isPlaying && currentIndex < entries.length - 1) {
-              setCurrentIndex(currentIndex + 1);
-            } else if (isPlaying && currentIndex === entries.length - 1) {
+            // Only proceed if we're still playing the same card
+            if (currentlyPlayingIndexRef.current !== index) {
+              return;
+            }
+            
+            if (isPlaying && index < entries.length - 1) {
+              setCurrentIndex(index + 1);
+            } else if (isPlaying && index === entries.length - 1) {
               // Stop at the end of the list
               setIsPlaying(false);
             }
@@ -181,54 +227,23 @@ export const AudioReview = ({ onClose, type }: AudioReviewProps) => {
     if (newPlayingState) {
       playCurrentEntry();
     } else {
-      // Stop speech and clear timers
-      if (speechSynthesisRef.current) {
-        speechSynthesisRef.current.cancel();
-      }
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
-      setSpeaking(false);
+      stopAllSpeech();
     }
   };
 
   // Navigate to previous entry
   const goToPrevious = () => {
     if (currentIndex > 0) {
-      // Stop current speech
-      if (speechSynthesisRef.current) {
-        speechSynthesisRef.current.cancel();
-      }
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
-      
+      stopAllSpeech();
       setCurrentIndex(currentIndex - 1);
-      
-      // Resume playing if in play mode
-      if (isPlaying) {
-        setTimeout(playCurrentEntry, 300);
-      }
     }
   };
 
   // Navigate to next entry
   const goToNext = () => {
     if (currentIndex < entries.length - 1) {
-      // Stop current speech
-      if (speechSynthesisRef.current) {
-        speechSynthesisRef.current.cancel();
-      }
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
-      
+      stopAllSpeech();
       setCurrentIndex(currentIndex + 1);
-      
-      // Resume playing if in play mode
-      if (isPlaying) {
-        setTimeout(playCurrentEntry, 300);
-      }
     }
   };
 
