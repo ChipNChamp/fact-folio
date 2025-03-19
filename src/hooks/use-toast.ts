@@ -6,14 +6,18 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
+// Reduce default toast limit to 1
 const TOAST_LIMIT = 1
+// Reduce success toast duration from 2500ms to 1500ms
 const TOAST_REMOVE_DELAY = 2500
+const SUCCESS_TOAST_REMOVE_DELAY = 1500
 
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  isSuccess?: boolean
 }
 
 const actionTypes = {
@@ -56,18 +60,19 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, isSuccess: boolean = false) => {
   if (toastTimeouts.has(toastId)) {
     return
   }
 
+  // Use shorter timeout for success toasts
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId)
     dispatch({
       type: "REMOVE_TOAST",
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, isSuccess ? SUCCESS_TOAST_REMOVE_DELAY : TOAST_REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)
 }
@@ -94,10 +99,11 @@ export const reducer = (state: State, action: Action): State => {
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
-        addToRemoveQueue(toastId)
+        const toast = state.toasts.find(t => t.id === toastId)
+        addToRemoveQueue(toastId, toast?.isSuccess)
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+          addToRemoveQueue(toast.id, toast.isSuccess)
         })
       }
 
@@ -142,12 +148,16 @@ type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
+  
+  // Auto-dismiss success toasts faster
+  const isSuccess = !props.variant || props.variant === "default"
 
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     })
+    
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
   dispatch({
@@ -155,12 +165,18 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
+      isSuccess,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()
       },
     },
   })
+  
+  // Automatically dismiss success toasts
+  if (isSuccess) {
+    setTimeout(dismiss, SUCCESS_TOAST_REMOVE_DELAY)
+  }
 
   return {
     id: id,
