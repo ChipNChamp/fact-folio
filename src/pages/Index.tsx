@@ -65,7 +65,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen overflow-hidden flex flex-col">
       <Header title="Fact-Folio" showBackButton={false} />
       
       <main className="flex-1 flex flex-col px-4 py-4 max-w-4xl mx-auto w-full">

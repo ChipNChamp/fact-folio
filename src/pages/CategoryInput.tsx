@@ -9,6 +9,7 @@ import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CategoryInput = () => {
   const { category } = useParams<{ category: string }>();
@@ -298,142 +299,104 @@ const CategoryInput = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen overflow-hidden flex flex-col">
       <Header title={getCategoryTitle()} />
       
       <main className="flex-1 px-4 py-6 max-w-3xl mx-auto w-full">
-        <div className="space-y-6 animate-fade-in">
-          {showApiKey && needsGeneration() && (
-            <div className="mb-8 animate-fade-in">
-              <ApiKeyInput />
-              <div className="flex justify-center mt-4">
-                <button 
-                  onClick={() => setShowApiKey(false)} 
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  {getApiKey() ? "Hide API Key" : "I'll add this later"}
-                </button>
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <label htmlFor="main-input" className="text-sm font-medium">
-              {getInputLabel()}
-            </label>
-            <div className="relative">
-              <Input
-                id="main-input"
-                ref={mainInputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={getInputPlaceholder()}
-                className={`w-full px-4 py-3 rounded-lg ${isDuplicate ? 'border-orange-500 pr-10' : 'border-input'} bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200`}
-              />
-              {isDuplicate && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-500">
-                  <AlertCircle className="h-5 w-5" />
-                </div>
-              )}
-            </div>
-            {isDuplicate && (
-              <div className="text-sm text-orange-500 mt-1 animate-fade-in">
-                Duplicate detected: This {getInputLabel().toLowerCase()} already exists
-              </div>
-            )}
-          </div>
-          
-          {needsManualOutput() && (
-            <div className="space-y-2">
-              <label htmlFor="manual-output" className="text-sm font-medium">
-                {getOutputLabel()} (Optional)
-              </label>
-              <Textarea
-                id="manual-output"
-                ref={manualOutputRef}
-                value={manualOutput}
-                onChange={(e) => setManualOutput(e.target.value)}
-                placeholder={`Enter ${getOutputLabel().toLowerCase()} (optional)`}
-                className="w-full min-h-[120px] px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
-              />
-            </div>
-          )}
-          
-          {needsGeneration() ? (
-            <>
-              <Button 
-                ref={generateButtonRef}
-                onClick={handleGenerate} 
-                disabled={isGenerating || !input.trim()}
-                className="w-full"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                    Generating...
-                  </>
-                ) : (
-                  <>Generate</>
-                )}
-              </Button>
-              
-              {!showApiKey && (
-                <div className="flex justify-center">
+        <ScrollArea className="h-full pr-4">
+          <div className="space-y-6 animate-fade-in">
+            {showApiKey && needsGeneration() && (
+              <div className="mb-8 animate-fade-in">
+                <ApiKeyInput />
+                <div className="flex justify-center mt-4">
                   <button 
-                    onClick={() => setShowApiKey(!showApiKey)} 
+                    onClick={() => setShowApiKey(false)} 
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
-                    {getApiKey() ? "Edit API Key" : "Set API Key"}
+                    {getApiKey() ? "Hide API Key" : "I'll add this later"}
                   </button>
                 </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label htmlFor="main-input" className="text-sm font-medium">
+                {getInputLabel()}
+              </label>
+              <div className="relative">
+                <Input
+                  id="main-input"
+                  ref={mainInputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={getInputPlaceholder()}
+                  className={`w-full px-4 py-3 rounded-lg ${isDuplicate ? 'border-orange-500 pr-10' : 'border-input'} bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200`}
+                />
+                {isDuplicate && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-500">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
+              {isDuplicate && (
+                <div className="text-sm text-orange-500 mt-1 animate-fade-in">
+                  Duplicate detected: This {getInputLabel().toLowerCase()} already exists
+                </div>
               )}
-            </>
-          ) : (
-            <Button 
-              onClick={handleSaveWithoutGeneration} 
-              disabled={isStoring || !input.trim()}
-              className="w-full"
-            >
-              {isStoring ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                  Saving...
-                </>
-              ) : (
-                <>Save Entry</>
-              )}
-            </Button>
-          )}
-          
-          {generatedContent && (
-            <div className="mt-8 animate-fade-in">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium">Generated Content</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className="flex items-center gap-1"
+            </div>
+            
+            {needsManualOutput() && (
+              <div className="space-y-2">
+                <label htmlFor="manual-output" className="text-sm font-medium">
+                  {getOutputLabel()} (Optional)
+                </label>
+                <Textarea
+                  id="manual-output"
+                  ref={manualOutputRef}
+                  value={manualOutput}
+                  onChange={(e) => setManualOutput(e.target.value)}
+                  placeholder={`Enter ${getOutputLabel().toLowerCase()} (optional)`}
+                  className="w-full min-h-[120px] px-4 py-3 rounded-lg border border-input bg-background shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all duration-200"
+                />
+              </div>
+            )}
+            
+            {needsGeneration() ? (
+              <>
+                <Button 
+                  ref={generateButtonRef}
+                  onClick={handleGenerate} 
+                  disabled={isGenerating || !input.trim()}
+                  className="w-full"
                 >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Regenerate
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                      Generating...
+                    </>
+                  ) : (
+                    <>Generate</>
+                  )}
                 </Button>
-              </div>
-              <div 
-                className="p-4 rounded-lg border border-border bg-muted/30 whitespace-pre-wrap"
-                onKeyDown={handleDivKeyDown}
-                tabIndex={0}
-              >
-                {generatedContent}
-              </div>
-              
+                
+                {!showApiKey && (
+                  <div className="flex justify-center">
+                    <button 
+                      onClick={() => setShowApiKey(!showApiKey)} 
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {getApiKey() ? "Edit API Key" : "Set API Key"}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
               <Button 
-                onClick={handleStore} 
-                disabled={isStoring}
-                className="w-full mt-4"
+                onClick={handleSaveWithoutGeneration} 
+                disabled={isStoring || !input.trim()}
+                className="w-full"
               >
                 {isStoring ? (
                   <>
@@ -444,9 +407,49 @@ const CategoryInput = () => {
                   <>Save Entry</>
                 )}
               </Button>
-            </div>
-          )}
-        </div>
+            )}
+            
+            {generatedContent && (
+              <div className="mt-8 animate-fade-in">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-medium">Generated Content</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Regenerate
+                  </Button>
+                </div>
+                <div 
+                  className="p-4 rounded-lg border border-border bg-muted/30 whitespace-pre-wrap"
+                  onKeyDown={handleDivKeyDown}
+                  tabIndex={0}
+                >
+                  {generatedContent}
+                </div>
+                
+                <Button 
+                  onClick={handleStore} 
+                  disabled={isStoring}
+                  className="w-full mt-4"
+                >
+                  {isStoring ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                      Saving...
+                    </>
+                  ) : (
+                    <>Save Entry</>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
       </main>
     </div>
   );
