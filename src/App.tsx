@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import IndexPage from "@/pages/Index";
 import ReviewPage from "@/pages/Review";
@@ -19,6 +19,52 @@ declare global {
     manualSync: () => Promise<void>;
   }
 }
+
+// KeyboardNavigation component to handle keyboard shortcuts
+const KeyboardNavigation = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input
+      if (e.target instanceof HTMLInputElement || 
+          e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      switch (e.key) {
+        case "1":
+          navigate("/input/vocabulary");
+          break;
+        case "2":
+          navigate("/input/phrases");
+          break;
+        case "3":
+          navigate("/input/definitions");
+          break;
+        case "4":
+          navigate("/input/questions");
+          break;
+        case "5":
+          navigate("/input/business");
+          break;
+        case "6":
+          navigate("/input/other");
+          break;
+        case "Escape":
+          navigate("/");
+          break;
+        default:
+          return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate]);
+
+  return null;
+};
 
 function App() {
   useEffect(() => {
@@ -48,6 +94,7 @@ function App() {
   return (
     <PasswordProtection password="AOW">
       <BrowserRouter>
+        <KeyboardNavigation />
         <Routes>
           <Route path="/" element={<IndexPage />} />
           <Route path="/review" element={<ReviewPage />} />

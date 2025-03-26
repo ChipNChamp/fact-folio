@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const Index = () => {
   const navigate = useNavigate();
   const [entryCount, setEntryCount] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -18,6 +19,10 @@ const Index = () => {
     };
     
     fetchEntries();
+
+    // Detect if user is on desktop browser to show keyboard shortcuts
+    const isDesktop = window.innerWidth > 768 && !window.navigator.userAgent.includes('Mobile');
+    setShowShortcuts(isDesktop);
   }, []);
 
   const categories = [
@@ -27,6 +32,7 @@ const Index = () => {
       path: "/input/vocabulary",
       reviewPath: "/review/vocabulary",
       color: "bg-blue-50 text-blue-600",
+      shortcut: "1"
     },
     {
       name: "Phrases",
@@ -34,6 +40,7 @@ const Index = () => {
       path: "/input/phrases",
       reviewPath: "/review/phrases",
       color: "bg-indigo-50 text-indigo-600",
+      shortcut: "2"
     },
     {
       name: "Definitions",
@@ -41,6 +48,7 @@ const Index = () => {
       path: "/input/definitions",
       reviewPath: "/review/definitions",
       color: "bg-purple-50 text-purple-600",
+      shortcut: "3"
     },
     {
       name: "Questions",
@@ -48,6 +56,7 @@ const Index = () => {
       path: "/input/questions",
       reviewPath: "/review/questions",
       color: "bg-pink-50 text-pink-600",
+      shortcut: "4"
     },
     {
       name: "Business",
@@ -55,6 +64,7 @@ const Index = () => {
       path: "/input/business",
       reviewPath: "/review/business",
       color: "bg-orange-50 text-orange-600",
+      shortcut: "5"
     },
     {
       name: "Other",
@@ -62,6 +72,7 @@ const Index = () => {
       path: "/input/other",
       reviewPath: "/review/other",
       color: "bg-emerald-50 text-emerald-600",
+      shortcut: "6"
     },
   ];
 
@@ -81,6 +92,9 @@ const Index = () => {
                   >
                     {category.icon}
                     <span className="font-medium">{category.name}</span>
+                    {showShortcuts && (
+                      <span className="keyboard-shortcut mt-1">{category.shortcut}</span>
+                    )}
                   </button>
                   <button
                     onClick={() => navigate(category.reviewPath)}
@@ -109,6 +123,12 @@ const Index = () => {
                 </p>
               )}
             </section>
+            
+            {showShortcuts && (
+              <div className="mt-2 mb-6 text-xs text-muted-foreground text-center animate-fade-in">
+                <p>Keyboard shortcuts: Press 1-6 to navigate to categories • Press Esc to return home</p>
+              </div>
+            )}
           </main>
         </ScrollArea>
       </div>
