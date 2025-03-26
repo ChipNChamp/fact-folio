@@ -26,5 +26,26 @@
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "orientation": "portrait-primary",
-  "categories": ["education", "productivity"]
+  "categories": ["education", "productivity"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "750x1334",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add New Entry",
+      "short_name": "Add Entry",
+      "url": "/input/other",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Review Entries",
+      "short_name": "Review",
+      "url": "/review",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ]
 }

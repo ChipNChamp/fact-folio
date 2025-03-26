@@ -10,6 +10,7 @@ import NotFound from "@/pages/NotFound";
 import { PasswordProtection } from "@/components/PasswordProtection";
 import { initializeStorage } from "@/utils/storage";
 import { manualSync } from "@/utils/syncStorage";
+import { IOSInstallPrompt } from "@/components/IOSInstallPrompt";
 import "./App.css";
 
 // Make manualSync available globally for the service worker
@@ -56,6 +57,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
+        <IOSInstallPrompt />
       </BrowserRouter>
     </PasswordProtection>
   );
