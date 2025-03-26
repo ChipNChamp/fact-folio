@@ -1,5 +1,5 @@
 
-import { useState, useEffect, ReactNode } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import { Button } from "@/components/Button";
 import { LockIcon } from "lucide-react";
 
@@ -8,7 +8,7 @@ interface PasswordProtectionProps {
   password: string;
 }
 
-export const PasswordProtection = ({ children, password }: PasswordProtectionProps) => {
+export const PasswordProtection: React.FC<PasswordProtectionProps> = ({ children, password }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
   const [error, setError] = useState(false);
