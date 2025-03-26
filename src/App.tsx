@@ -12,6 +12,13 @@ import { initializeStorage } from "@/utils/storage";
 import { manualSync } from "@/utils/syncStorage";
 import "./App.css";
 
+// Make manualSync available globally for the service worker
+declare global {
+  interface Window {
+    manualSync: () => Promise<void>;
+  }
+}
+
 function App() {
   useEffect(() => {
     document.title = "Knowledge Base";
@@ -28,6 +35,9 @@ function App() {
     
     // Set up a periodic sync for when the app is open
     const syncInterval = setInterval(manualSync, 60000); // Sync every minute
+    
+    // Make manualSync available globally for service worker
+    window.manualSync = manualSync;
     
     return () => {
       clearInterval(syncInterval);
