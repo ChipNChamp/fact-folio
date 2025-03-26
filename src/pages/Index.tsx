@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Book, BookOpen, FileText, HelpCircle, Briefcase, FolderDot } from "lucide-react";
 import { getAllEntries } from "@/utils/storage";
 import { useEffect, useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -65,48 +66,52 @@ const Index = () => {
   ];
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col">
+    <div className="h-screen max-h-screen overflow-hidden flex flex-col">
       <Header title="Fact-Folio" showBackButton={false} />
       
-      <main className="flex-1 flex flex-col px-4 py-4 max-w-4xl mx-auto w-full">
-        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 animate-slide-in">
-          {categories.map((category) => (
-            <div key={category.name} className="flex flex-col space-y-1">
-              <button
-                onClick={() => navigate(category.path)}
-                className={`rounded-xl p-3 flex flex-col items-center justify-center text-center h-28 transition-all duration-200 border border-border/30 ${category.color} shadow-sm hover:shadow-md hover:scale-[1.02]`}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ScrollArea className="flex-1">
+          <main className="flex-1 flex flex-col px-4 py-4 max-w-4xl mx-auto w-full">
+            <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 animate-slide-in">
+              {categories.map((category) => (
+                <div key={category.name} className="flex flex-col space-y-1">
+                  <button
+                    onClick={() => navigate(category.path)}
+                    className={`rounded-xl p-3 flex flex-col items-center justify-center text-center h-28 transition-all duration-200 border border-border/30 ${category.color} shadow-sm hover:shadow-md hover:scale-[1.02]`}
+                  >
+                    {category.icon}
+                    <span className="font-medium">{category.name}</span>
+                  </button>
+                  <button
+                    onClick={() => navigate(category.reviewPath)}
+                    className={`rounded-lg p-1 flex items-center justify-center text-center text-xs font-medium transition-all duration-200 border border-border/30 ${category.color} bg-opacity-30 hover:bg-opacity-50`}
+                  >
+                    Review
+                  </button>
+                </div>
+              ))}
+            </section>
+            
+            <section className="mt-2 mb-4 flex justify-center animate-slide-in" style={{ animationDelay: "0.2s" }}>
+              <Button 
+                size="wide" 
+                className="relative overflow-hidden group"
+                onClick={() => navigate("/review")}
+                disabled={entryCount === 0}
               >
-                {category.icon}
-                <span className="font-medium">{category.name}</span>
-              </button>
-              <button
-                onClick={() => navigate(category.reviewPath)}
-                className={`rounded-lg p-1 flex items-center justify-center text-center text-xs font-medium transition-all duration-200 border border-border/30 ${category.color} bg-opacity-30 hover:bg-opacity-50`}
-              >
-                Review
-              </button>
-            </div>
-          ))}
-        </section>
-        
-        <section className="mt-2 mb-4 flex justify-center animate-slide-in" style={{ animationDelay: "0.2s" }}>
-          <Button 
-            size="wide" 
-            className="relative overflow-hidden group"
-            onClick={() => navigate("/review")}
-            disabled={entryCount === 0}
-          >
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            Omni-Review
-          </Button>
-          
-          {entryCount === 0 && (
-            <p className="text-sm text-muted-foreground mt-3 text-center">
-              Add some entries to begin reviewing
-            </p>
-          )}
-        </section>
-      </main>
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                Omni-Review
+              </Button>
+              
+              {entryCount === 0 && (
+                <p className="text-sm text-muted-foreground mt-3 text-center">
+                  Add some entries to begin reviewing
+                </p>
+              )}
+            </section>
+          </main>
+        </ScrollArea>
+      </div>
     </div>
   );
 };
