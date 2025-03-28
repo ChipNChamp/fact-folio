@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import IndexPage from "@/pages/Index";
 import ReviewPage from "@/pages/Review";
@@ -19,6 +19,20 @@ declare global {
     manualSync: () => Promise<void>;
   }
 }
+
+// RouteObserver component to handle page-specific behaviors
+const RouteObserver = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Remove the data-page attribute when navigating away from entries
+    if (!location.pathname.includes('/entries')) {
+      document.body.removeAttribute('data-page');
+    }
+  }, [location]);
+  
+  return null;
+};
 
 // KeyboardNavigation component to handle keyboard shortcuts
 const KeyboardNavigation = () => {
@@ -95,6 +109,7 @@ function App() {
     <PasswordProtection password="AOW">
       <BrowserRouter>
         <KeyboardNavigation />
+        <RouteObserver />
         <Routes>
           <Route path="/" element={<IndexPage />} />
           <Route path="/review" element={<ReviewPage />} />

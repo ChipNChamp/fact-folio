@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { EntriesTable } from "@/components/EntriesTable";
@@ -43,18 +42,24 @@ const EntriesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Initialize storage and sync
+  useEffect(() => {
+    document.body.setAttribute('data-page', 'entries');
+    
+    return () => {
+      document.body.removeAttribute('data-page');
+    };
+  }, []);
+  
   useEffect(() => {
     const init = async () => {
       await initializeStorage();
-      await manualSync(); // Sync with Supabase on load
+      await manualSync();
       setIsLoading(false);
     };
     
     init();
   }, []);
   
-  // Check if there are any entries
   useEffect(() => {
     const checkEntries = async () => {
       try {
@@ -103,12 +108,10 @@ const EntriesPage = () => {
         description: "Your new entry has been saved",
       });
       
-      // Reset form and close dialog
       setNewEntryInput("");
       setNewEntryOutput("");
       setIsAddDialogOpen(false);
       
-      // Refresh the entries list
       handleRefresh();
     } catch (error) {
       console.error("Error adding entry:", error);
@@ -133,10 +136,8 @@ const EntriesPage = () => {
         const csvData = event.target?.result as string;
         const rows = csvData.split('\n');
         
-        // Remove header row
         rows.shift();
         
-        // Filter out empty rows
         const validRows = rows.filter(row => row.trim().length > 0);
         setUploadStatus({ total: validRows.length, processed: 0 });
         
@@ -178,7 +179,6 @@ const EntriesPage = () => {
         setIsUploadDialogOpen(false);
         handleRefresh();
         
-        // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -206,15 +206,12 @@ const EntriesPage = () => {
       
       if (char === '"') {
         if (inQuotes && i < row.length - 1 && row[i + 1] === '"') {
-          // Double quotes inside quoted string -> escaped quote
-          current += '"';
+          inQuotes = !inQuotes;
           i++;
         } else {
-          // Toggle quote mode
           inQuotes = !inQuotes;
         }
       } else if (char === ',' && !inQuotes) {
-        // End of column
         result.push(current);
         current = "";
       } else {
@@ -227,10 +224,10 @@ const EntriesPage = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
       <Header title="Entries" />
       
-      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full overflow-auto">
+      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full">
         <div className="space-y-4 animate-fade-in">
           <div className="flex flex-wrap gap-2 items-center justify-between">
             <div className="flex flex-wrap gap-1 sm:gap-2">
@@ -302,7 +299,6 @@ const EntriesPage = () => {
         </div>
       </main>
 
-      {/* Add Entry Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -358,7 +354,6 @@ const EntriesPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* CSV Upload Dialog */}
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

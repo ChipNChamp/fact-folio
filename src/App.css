@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -13,6 +14,13 @@ body {
   top: 0;
   left: 0;
   touch-action: none; /* Prevents all browser touch actions including scrolling */
+}
+
+/* Allow scrolling on entries page */
+body[data-page="entries"] {
+  overflow: auto;
+  position: static;
+  touch-action: auto;
 }
 
 /* Style for our keyboard navigation cues */
