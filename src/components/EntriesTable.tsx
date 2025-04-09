@@ -23,6 +23,7 @@ import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
 import { manualSync } from "@/utils/syncStorage";
 import { Input } from "@/components/ui/input";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 
 interface EntriesTableProps {
   type?: EntryType;
@@ -297,8 +298,8 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
   }
   
   return (
-    <div className="overflow-x-auto animate-fade-in">
-      <div className="sticky top-0 z-10 bg-background p-4 border-b border-border mb-4">
+    <div className="animate-fade-in">
+      <div className="sticky top-0 z-10 bg-background mb-4">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div className="flex flex-wrap gap-2">
             {!hideSelectMode && (
@@ -381,26 +382,26 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
         </div>
       </div>
       
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-muted/50">
+      <Table>
+        <TableHeader>
+          <TableRow>
             {selectMode && (
-              <th className="p-3 text-left font-medium text-sm w-10"></th>
+              <TableHead className="w-10"></TableHead>
             )}
-            <th className="p-3 text-left font-medium text-sm">Input</th>
-            <th className="p-3 text-left font-medium text-sm">Output</th>
-            <th className="p-3 text-left font-medium text-sm">Date</th>
-            <th className="p-3 text-left font-medium text-sm">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+            <TableHead>Input</TableHead>
+            <TableHead>Output</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {entries.map(entry => (
-            <tr 
+            <TableRow 
               key={entry.id} 
-              className={`border-b border-border hover:bg-muted/20 ${selectedEntries.includes(entry.id) ? 'bg-muted/30' : ''}`}
+              className={selectedEntries.includes(entry.id) ? 'bg-muted/30' : ''}
             >
               {selectMode && (
-                <td className="p-3 text-center">
+                <TableCell className="text-center">
                   <button 
                     onClick={() => toggleSelectEntry(entry.id)} 
                     className="cursor-pointer"
@@ -412,10 +413,10 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
                       <Square className="h-5 w-5" />
                     )}
                   </button>
-                </td>
+                </TableCell>
               )}
               
-              <td className="p-3">
+              <TableCell>
                 {editingId === entry.id ? (
                   <Input
                     type="text"
@@ -427,9 +428,9 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
                 ) : (
                   entry.input
                 )}
-              </td>
+              </TableCell>
               
-              <td className="p-3">
+              <TableCell>
                 {editingId === entry.id ? (
                   <textarea
                     value={editOutput}
@@ -442,13 +443,13 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
                     {entry.output}
                   </div>
                 )}
-              </td>
+              </TableCell>
               
-              <td className="p-3 whitespace-nowrap">
+              <TableCell className="whitespace-nowrap">
                 {formatDate(entry.createdAt)}
-              </td>
+              </TableCell>
               
-              <td className="p-3 whitespace-nowrap">
+              <TableCell className="whitespace-nowrap">
                 <div className="flex space-x-2">
                   {editingId === entry.id ? (
                     <>
@@ -492,12 +493,11 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
                     </>
                   )}
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 };
-
