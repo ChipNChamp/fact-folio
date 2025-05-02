@@ -25,6 +25,7 @@ const LessonPlansPage = () => {
   const loadLessonPlans = () => {
     try {
       const plans = getLessonPlans();
+      console.log("Loaded lesson plans:", plans); // Debug: log loaded plans
       setLessonPlans(plans);
     } catch (error) {
       console.error("Error loading lesson plans:", error);

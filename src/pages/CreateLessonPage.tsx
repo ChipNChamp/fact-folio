@@ -149,6 +149,12 @@ const CreateLessonPage = () => {
                 <p className="text-muted-foreground mb-6">
                   Redirecting to the lesson player...
                 </p>
+                <Button 
+                  onClick={() => navigate("/lessons")}
+                  variant="outline"
+                >
+                  View All Lessons
+                </Button>
               </div>
             </div>
           )}

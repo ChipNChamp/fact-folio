@@ -1,3 +1,4 @@
+
 import { EntryData, getAllEntries, getEntriesByType } from "./storage";
 import { getApiKey } from "./contentGenerator";
 
@@ -261,11 +262,15 @@ export const saveLessonPlan = (plan: LessonPlan): void => {
     // Get existing lesson plans
     const existingPlans = getLessonPlans();
     
+    console.log("Saving lesson plan with ID:", plan.id); // Debug: log the plan being saved
+    
     // Add new plan to the beginning of the array
     const updatedPlans = [plan, ...existingPlans];
     
     // Save to localStorage
     localStorage.setItem(LESSON_PLANS_STORAGE_KEY, JSON.stringify(updatedPlans));
+    
+    console.log("Updated lesson plans count:", updatedPlans.length); // Debug: confirm save completed
   } catch (error) {
     console.error("Error saving lesson plan:", error);
   }
@@ -274,7 +279,9 @@ export const saveLessonPlan = (plan: LessonPlan): void => {
 export const getLessonPlans = (): LessonPlan[] => {
   try {
     const plansString = localStorage.getItem(LESSON_PLANS_STORAGE_KEY);
-    return plansString ? JSON.parse(plansString) : [];
+    const plans = plansString ? JSON.parse(plansString) : [];
+    console.log("Retrieved lesson plans count:", plans.length); // Debug: log count of plans retrieved
+    return plans;
   } catch (error) {
     console.error("Error retrieving lesson plans:", error);
     return [];
