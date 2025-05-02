@@ -1,4 +1,3 @@
-
 import { EntryData, getAllEntries, getEntriesByType } from "./storage";
 import { getApiKey } from "./contentGenerator";
 
@@ -74,7 +73,9 @@ export const generateLessonPlan = async (
             For vocabulary, phrases, questions, and simple definitions, group them into quick back-and-forth sections.
             For business topics, complex definitions, and other categories, group them into longer narrative sections.
             
-            Create 2-5 topics based on semantic similarities in the content. Each topic should have a clear theme.`
+            Create 2-5 topics based on semantic similarities in the content. Each topic should have a clear theme.
+            
+            IMPORTANT: The total lesson should be between 3-7 minutes in length when read aloud at a normal pace.`
           },
           {
             role: "user",
@@ -148,7 +149,7 @@ export const generateLessonAudio = async (lessonPlan: LessonPlan): Promise<strin
     // Generate script for the entire lesson
     const script = generateLessonScript(lessonPlan);
     
-    // Call OpenAI API to generate audio
+    // Call OpenAI API to generate audio - ensure it's 3-7 minutes in length
     const response = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: {
@@ -182,7 +183,7 @@ export const generateLessonAudio = async (lessonPlan: LessonPlan): Promise<strin
   }
 };
 
-// Helper function to generate a script for the lesson
+// Helper function to generate a script for the lesson - aim for 3-7 minutes in length
 const generateLessonScript = (lessonPlan: LessonPlan): string => {
   let script = `Welcome to today's lesson: ${lessonPlan.title}.\n\n`;
   

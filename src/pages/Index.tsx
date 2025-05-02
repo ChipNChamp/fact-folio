@@ -111,10 +111,10 @@ const Index = () => {
               ))}
             </section>
             
-            <section className="flex gap-3 mb-6">
+            <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
               <Button 
                 size="wide" 
-                className="relative overflow-hidden group"
+                className="relative overflow-hidden group h-14"
                 onClick={() => navigate("/review")}
                 disabled={entryCount === 0}
               >
@@ -125,7 +125,7 @@ const Index = () => {
               <Button 
                 size="wide"
                 variant="outline"
-                className="relative overflow-hidden group flex items-center justify-center"
+                className="relative overflow-hidden group flex items-center justify-center h-14"
                 onClick={() => navigate("/lessons")}
               >
                 <BookText className="h-5 w-5 mr-2" />
