@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -228,8 +227,8 @@ const EntriesPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header title="Entries" />
       
-      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full flex flex-col">
-        <div className="space-y-4 animate-fade-in flex flex-col flex-1">
+      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full">
+        <div className="space-y-4 animate-fade-in">
           <div className="flex flex-wrap gap-2 items-center justify-between">
             <div className="flex flex-wrap gap-1 sm:gap-2">
               <Button
@@ -283,20 +282,18 @@ const EntriesPage = () => {
             </div>
           </div>
           
-          <div className="border rounded-lg p-2 sm:p-4 flex-1 overflow-hidden">
+          <div className="border rounded-lg p-2 sm:p-4">
             {isLoading && !hasEntries ? (
               <div className="text-center p-8">
                 <p className="text-muted-foreground">Loading entries...</p>
               </div>
             ) : (
-              <ScrollArea className="h-[calc(100vh-220px)]">
-                <EntriesTable 
-                  key={`${selectedType || 'all'}-${refreshFlag}`}
-                  type={selectedType} 
-                  onUpdate={handleRefresh}
-                  hideSelectMode={true}
-                />
-              </ScrollArea>
+              <EntriesTable 
+                key={`${selectedType || 'all'}-${refreshFlag}`}
+                type={selectedType} 
+                onUpdate={handleRefresh}
+                hideSelectMode={true}
+              />
             )}
           </div>
         </div>
