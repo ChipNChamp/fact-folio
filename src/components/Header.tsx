@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, BookText } from "lucide-react";
 import { Button } from "./Button";
 
 interface HeaderProps {
@@ -32,12 +32,22 @@ export const Header = ({ title, showBackButton = true }: HeaderProps) => {
           <h1 className="text-xl font-semibold">{title}</h1>
         </div>
         
-        <div className="flex items-center">
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate("/lessons")} 
+            className="rounded-full"
+            title="Lessons"
+          >
+            <BookText className="h-5 w-5" />
+          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => navigate("/entries")} 
             className="rounded-full"
+            title="Entries"
           >
             <BookOpen className="h-5 w-5" />
           </Button>

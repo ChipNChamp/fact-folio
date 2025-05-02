@@ -1,7 +1,8 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Header } from "@/components/Header";
-import { Book, BookOpen, FileText, HelpCircle, Briefcase, FolderDot } from "lucide-react";
+import { Book, BookOpen, FileText, HelpCircle, Briefcase, FolderDot, BookText } from "lucide-react";
 import { getAllEntries } from "@/utils/storage";
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -110,7 +111,7 @@ const Index = () => {
               ))}
             </section>
             
-            <section className="mt-2 mb-4 flex justify-center animate-slide-in" style={{ animationDelay: "0.2s" }}>
+            <section className="flex gap-3 mb-6">
               <Button 
                 size="wide" 
                 className="relative overflow-hidden group"
@@ -121,12 +122,22 @@ const Index = () => {
                 Omni-Review
               </Button>
               
-              {entryCount === 0 && (
-                <p className="text-sm text-muted-foreground mt-3 text-center">
-                  Add some entries to begin reviewing
-                </p>
-              )}
+              <Button 
+                size="wide"
+                variant="outline"
+                className="relative overflow-hidden group flex items-center justify-center"
+                onClick={() => navigate("/lessons")}
+              >
+                <BookText className="h-5 w-5 mr-2" />
+                Lessons
+              </Button>
             </section>
+            
+            {entryCount === 0 && (
+              <p className="text-sm text-muted-foreground mt-3 text-center">
+                Add some entries to begin reviewing
+              </p>
+            )}
             
             {showShortcuts && (
               <div className="mt-2 mb-6 text-xs text-muted-foreground text-center animate-fade-in">
