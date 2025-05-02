@@ -378,6 +378,12 @@ export const manualSync = async () => {
   }
 };
 
+// Explicitly add manualSync to the window object
+// This makes it accessible from the service worker
+if (typeof window !== 'undefined') {
+  window.manualSync = manualSync;
+}
+
 export const initializeSync = async () => {
   const localStorageEntries = localStorage.getItem('knowledge-entries');
   if (localStorageEntries) {
