@@ -44,6 +44,40 @@ export const FlashCard = ({
     }, 300);
   };
 
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        switch (e.key) {
+          case " ": // Spacebar to flip the card
+            handleFlip();
+            break;
+          case "ArrowRight": // Right arrow for next
+            if (canGoNext) onNext();
+            break;
+          case "ArrowLeft": // Left arrow for previous
+            if (canGoPrev) onPrev();
+            break;
+          case "1": // 1, 2, 3 for knowledge level (when card is flipped)
+            if (isFlipped) handleKnowledge(0); // Fail
+            break;
+          case "2":
+            if (isFlipped) handleKnowledge(1); // Eh
+            break;
+          case "3":
+            if (isFlipped) handleKnowledge(2); // Pass
+            break;
+        }
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [canGoNext, canGoPrev, isFlipped]);
+
   return (
     <div className={cn("w-full max-w-md relative", className)}>
       {/* Navigation arrows on sides */}

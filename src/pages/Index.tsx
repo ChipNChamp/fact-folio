@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Header } from "@/components/Header";
@@ -6,11 +5,13 @@ import { Book, BookOpen, FileText, HelpCircle, Briefcase, FolderDot } from "luci
 import { getAllEntries } from "@/utils/storage";
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 
 const Index = () => {
   const navigate = useNavigate();
   const [entryCount, setEntryCount] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [isBrowser, setIsBrowser] = useState(false);
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -23,6 +24,9 @@ const Index = () => {
     // Detect if user is on desktop browser to show keyboard shortcuts
     const isDesktop = window.innerWidth > 768 && !window.navigator.userAgent.includes('Mobile');
     setShowShortcuts(isDesktop);
+
+    // Add detection for browser vs mobile
+    setIsBrowser(typeof window !== 'undefined' && !navigator.userAgent.match(/iPhone|iPad|iPod|Android/i));
   }, []);
 
   const categories = [
@@ -77,7 +81,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden fixed inset-0 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header title="Fact-Folio" showBackButton={false} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -132,6 +136,9 @@ const Index = () => {
           </main>
         </ScrollArea>
       </div>
+      
+      {/* Show keyboard shortcuts on desktop */}
+      {isBrowser && <KeyboardShortcuts />}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { FlashCard } from "@/components/FlashCard";
 import { Button } from "@/components/Button";
 import { AudioReview } from "@/components/AudioReview";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { getEntriesForReview, getEntriesByType, EntryData, EntryType } from "@/utils/storage";
 import { RotateCcw, AlertCircle, Volume2, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -15,6 +16,12 @@ const Review = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [audioMode, setAudioMode] = useState(false);
   const navigate = useNavigate();
+  const [isBrowser, setIsBrowser] = useState(false);
+  
+  // Detect if running in browser (for keyboard shortcuts)
+  useEffect(() => {
+    setIsBrowser(typeof window !== 'undefined' && !navigator.userAgent.match(/iPhone|iPad|iPod|Android/i));
+  }, []);
   
   // Load review entries on mount or when category changes
   useEffect(() => {
@@ -189,6 +196,9 @@ const Review = () => {
           </div>
         </div>
       </main>
+      
+      {/* Show keyboard shortcuts on desktop */}
+      {isBrowser && <KeyboardShortcuts />}
     </div>
   );
 };
