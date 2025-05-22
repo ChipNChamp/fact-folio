@@ -133,6 +133,19 @@ const Index = () => {
               </Button>
             </section>
             
+            {/* New Lessons button */}
+            <section className="mb-6">
+              <Button 
+                size="wide"
+                variant="pass"
+                className="relative overflow-hidden group flex items-center justify-center h-14 w-full"
+                onClick={() => navigate("/lessons")}
+              >
+                <BookText className="h-6 w-6 mr-2" />
+                <span className="text-lg font-medium">Access Lessons</span>
+              </Button>
+            </section>
+            
             {entryCount === 0 && (
               <p className="text-sm text-muted-foreground mt-3 text-center">
                 Add some entries to begin reviewing
