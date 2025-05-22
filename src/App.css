@@ -23,6 +23,16 @@ body[data-page="entries"] {
   touch-action: auto;
 }
 
+/* Hide scrollbar but maintain functionality */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 /* Style for our keyboard navigation cues */
 .keyboard-shortcut {
   display: inline-flex;

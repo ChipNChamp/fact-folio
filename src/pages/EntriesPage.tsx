@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { EntriesTable } from "@/components/EntriesTable";
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const EntryTypes: { value: EntryType; label: string }[] = [
   { value: "vocabulary", label: "Vocabulary" },
@@ -227,9 +229,9 @@ const EntriesPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header title="Entries" />
       
-      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full">
+      <main className="flex-1 px-2 py-3 sm:px-4 sm:py-6 max-w-5xl mx-auto w-full relative">
         <div className="space-y-4 animate-fade-in">
-          <div className="flex flex-wrap gap-2 items-center justify-between">
+          <div className="flex flex-wrap gap-2 items-center justify-between sticky top-0 z-10 bg-background pt-2 pb-4">
             <div className="flex flex-wrap gap-1 sm:gap-2">
               <Button
                 variant={!selectedType ? "default" : "outline"}

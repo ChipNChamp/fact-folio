@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   getAllEntries, 
@@ -23,6 +22,8 @@ import { Button } from "@/components/Button";
 import { useToast } from "@/hooks/use-toast";
 import { manualSync } from "@/utils/syncStorage";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EntriesTableProps {
   type?: EntryType;
@@ -40,6 +41,7 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
   const [editOutput, setEditOutput] = useState("");
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
   const [selectMode, setSelectMode] = useState(false);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     refreshEntries();
@@ -270,34 +272,8 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
     });
   };
   
-  if (loading && entries.length === 0) {
-    return (
-      <div className="text-center p-8 border rounded-lg bg-muted/30">
-        <p className="text-muted-foreground">Loading entries...</p>
-      </div>
-    );
-  }
-  
-  if (entries.length === 0) {
-    return (
-      <div className="text-center p-8 border rounded-lg bg-muted/30">
-        <p className="text-muted-foreground">No entries found</p>
-        <Button 
-          variant="default"
-          size="sm" 
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 mt-4 mx-auto"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? "Syncing..." : "Sync with Server"}
-        </Button>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="overflow-x-auto animate-fade-in">
+  const TableContent = (
+    <>
       <div className="sticky top-0 z-10 bg-background p-4 border-b border-border mb-4">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div className="flex flex-wrap gap-2">
@@ -438,7 +414,7 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
                     rows={2}
                   />
                 ) : (
-                  <div className="max-h-[80px] overflow-y-auto text-sm">
+                  <div className="max-h-[80px] overflow-y-auto hide-scrollbar text-sm">
                     {entry.output}
                   </div>
                 )}
@@ -497,7 +473,44 @@ export const EntriesTable = ({ type, onUpdate, hideSelectMode = false }: Entries
           ))}
         </tbody>
       </table>
+    </>
+  );
+  
+  if (loading && entries.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-lg bg-muted/30">
+        <p className="text-muted-foreground">Loading entries...</p>
+      </div>
+    );
+  }
+  
+  if (entries.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-lg bg-muted/30">
+        <p className="text-muted-foreground">No entries found</p>
+        <Button 
+          variant="default"
+          size="sm" 
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 mt-4 mx-auto"
+        >
+          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? "Syncing..." : "Sync with Server"}
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="overflow-x-auto animate-fade-in">
+      {isMobile ? (
+        TableContent
+      ) : (
+        <ScrollArea className="h-[calc(100vh-200px)]">
+          {TableContent}
+        </ScrollArea>
+      )}
     </div>
   );
 };
-
