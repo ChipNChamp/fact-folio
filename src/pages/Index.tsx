@@ -88,18 +88,6 @@ const Index = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <ScrollArea className="flex-1">
           <main className="flex-1 flex flex-col px-4 py-4 max-w-4xl mx-auto w-full">
-            <section className="mb-6 animate-slide-in">
-              <Button 
-                size="wide"
-                variant="pass"
-                className="relative overflow-hidden group flex items-center justify-center h-14 w-full"
-                onClick={() => navigate("/lessons")}
-              >
-                <BookText className="h-6 w-6 mr-2" />
-                <span className="text-lg font-medium">Access Lessons</span>
-              </Button>
-            </section>
-            
             <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 animate-slide-in">
               {categories.map((category) => (
                 <div key={category.name} className="flex flex-col space-y-1">
@@ -138,10 +126,23 @@ const Index = () => {
                 size="wide"
                 variant="outline"
                 className="relative overflow-hidden group flex items-center justify-center h-14"
-                onClick={() => navigate("/entries")}
+                onClick={() => navigate("/lessons")}
               >
-                <BookOpen className="h-5 w-5 mr-2" />
-                All Entries
+                <BookText className="h-5 w-5 mr-2" />
+                Lessons
+              </Button>
+            </section>
+            
+            {/* New Lessons button */}
+            <section className="mb-6">
+              <Button 
+                size="wide"
+                variant="pass"
+                className="relative overflow-hidden group flex items-center justify-center h-14 w-full"
+                onClick={() => navigate("/lessons")}
+              >
+                <BookText className="h-6 w-6 mr-2" />
+                <span className="text-lg font-medium">Access Lessons</span>
               </Button>
             </section>
             
